@@ -1,18 +1,16 @@
 package de.hpi.isg.io;
 
 /**
- * Load the input excel file and transform it into the csv file.
+ * Load an excel file in csv format that is most similar to the one that the user has just processed.
  *
  * @author Lan Jiang
  * @since 8/23/19
  */
 public class LoadExcelFile {
 
-    private final String inputFilePath;
+    private final String currentTable;
 
-    public LoadExcelFile(String inputFilePath) {
-        this.inputFilePath = inputFilePath;
+    public LoadExcelFile(String currentTable) {
+        this.currentTable = currentTable;
     }
-
-
 }
