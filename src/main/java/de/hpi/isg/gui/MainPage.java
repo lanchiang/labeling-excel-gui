@@ -12,6 +12,7 @@ public class MainPage {
     public void run() {
         JFrame frame = new JFrame("Excel File Line Function Annotator");
 
+        createLoadNextFileButton(frame);
         createExcelFileDisplayTable(frame);
 
         createStartAndEndLineTextFields(frame);
@@ -33,6 +34,11 @@ public class MainPage {
 
     }
 
+    private void createLoadNextFileButton(JFrame frame) {
+        JButton loadNextFileButton = new JButton("Load Next File");
+        frame.add(loadNextFileButton);
+    }
+
     private void createStartAndEndLineTextFields(JFrame frame) {
         JTextField start, end;
         start = new JTextField();
@@ -44,8 +50,11 @@ public class MainPage {
     }
 
     private void createSubmitButton(JFrame frame) {
-        JButton submitButton = new JButton("Submit!");
+        JButton submitButton = new JButton("Submit");
         frame.add(submitButton);
+
+        JButton finishButton = new JButton("Finish Annotation");
+        frame.add(finishButton);
     }
 
     private void createLineTypeDropList(JFrame frame) {
