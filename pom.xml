@@ -37,6 +37,13 @@
             <artifactId>opencsv</artifactId>
             <version>4.5</version>
         </dependency>
+
+        <!-- string similarity -->
+        <dependency>
+            <groupId>info.debatty</groupId>
+            <artifactId>java-string-similarity</artifactId>
+            <version>1.2.1</version>
+        </dependency>
     </dependencies>
 
 </project>

@@ -8,7 +8,7 @@ import java.io.File;
  * @author Lan Jiang
  * @since 8/28/19
  */
-abstract public class SheetSimilarityFeature {
+abstract class SheetSimilarityFeature {
 
     // spreadsheet file name similarity
     // sheet count
