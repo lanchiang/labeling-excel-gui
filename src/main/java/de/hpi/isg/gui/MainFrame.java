@@ -1,11 +1,19 @@
 package de.hpi.isg.gui;
 
-import de.hpi.isg.io.LoadExcelFile;
+import com.opencsv.CSVReader;
+import de.hpi.isg.io.SheetSimilarityCalculator;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 /**
  * @author Lan Jiang
@@ -33,6 +41,12 @@ public class MainFrame {
     private JLabel loadedFileLabel;
     private JLabel loadedFileNumberLabel;
 
+    private File[] loadedFiles;
+
+    private File currentFile;
+
+    private SheetSimilarityCalculator calculator;
+
     public MainFrame() {
         $$$setupUI$$$();
         submitAndFinishButton.addActionListener(e -> {
@@ -57,11 +71,48 @@ public class MainFrame {
         });
         submitAndNextFileButton.addActionListener(e -> {
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
-            if (tableModel != null) {
+            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
                 // save the results of the current table
+                currentFile = calculator.getMostSimilarFile(currentFile);
+            } else {
+                // load a random new table
+                Random random = new Random(System.currentTimeMillis());
+                int selectedIndex = random.nextInt(loadedFiles.length);
+                System.out.println(loadedFiles[selectedIndex].getName());
+
+                currentFile = loadedFiles[selectedIndex];
             }
-            // load a new table
-            LoadExcelFile loadExcelFile = new LoadExcelFile(null);
+
+            try {
+                loadFile(currentFile, sheetDisplayTable);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+        loadAllFilesButton.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/data-downloader"));
+            chooser.setDialogTitle("Dialog title");
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setAcceptAllFileFilterUsed(false);
+
+            int choiceCode = chooser.showOpenDialog(loadAllFilesButton);
+            if (choiceCode == JFileChooser.APPROVE_OPTION) {
+                File selectedDir = chooser.getSelectedFile();
+                System.out.println(selectedDir.getPath());
+                loadedFiles = selectedDir.listFiles();
+                assert loadedFiles != null;
+                loadedFileNumberLabel.setText(String.valueOf(loadedFiles.length));
+
+                calculator = new SheetSimilarityCalculator(loadedFiles);
+                calculator.calculate();
+
+                submitAndNextFileButton.setEnabled(true);
+                submitAndFinishButton.setEnabled(true);
+            }
+        });
+        submitAndFinishButton.addActionListener(e -> {
+            // write the results into a json file.
         });
     }
 
@@ -135,9 +186,11 @@ public class MainFrame {
         submitPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(submitPanel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(311, 31), null, 2, false));
         submitAndNextFileButton = new JButton();
+        submitAndNextFileButton.setEnabled(false);
         submitAndNextFileButton.setText("Submit and Next File");
         submitPanel.add(submitAndNextFileButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         submitAndFinishButton = new JButton();
+        submitAndFinishButton.setEnabled(false);
         submitAndFinishButton.setText("Submit and Finish");
         submitPanel.add(submitAndFinishButton, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
@@ -163,7 +216,17 @@ public class MainFrame {
 
     private void createUIComponents() {
         // TODO: place custom component creation code here
-        System.out.println("createUIComponents");
         labeledInfoTable = new JTable(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
+    }
+
+    private void loadFile(final File file, JTable table) throws IOException {
+        CSVReader reader = new CSVReader(new FileReader(file));
+        List<String[]> dataEntries = reader.readAll();
+
+        DefaultTableModel tableModel = new DefaultTableModel(0, dataEntries.get(0).length);
+        dataEntries.forEach(tableModel::addRow);
+        table.setModel(tableModel);
+
+        System.out.println(tableModel.getColumnCount() + "\t" + tableModel.getRowCount());
     }
 }
