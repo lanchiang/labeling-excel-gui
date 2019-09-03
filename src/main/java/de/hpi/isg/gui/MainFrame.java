@@ -6,14 +6,9 @@ import de.hpi.isg.io.SheetSimilarityCalculator;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
-import java.util.Random;
 
 /**
  * @author Lan Jiang
@@ -45,6 +40,8 @@ public class MainFrame {
 
     private File currentFile;
 
+    private Map<String, Map<String, Double>> similarities;
+
     private SheetSimilarityCalculator calculator;
 
     public MainFrame() {
@@ -72,6 +69,14 @@ public class MainFrame {
         submitAndNextFileButton.addActionListener(e -> {
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
+                DefaultTableModel labelTableModel = (DefaultTableModel) labeledInfoTable.getModel();
+
+                // check whether the label info table is empty.
+//                if (labelTableModel.getRowCount() == 0) {
+//                    JOptionPane.showMessageDialog(null, "Please enter some labels for this data file.");
+//                    return;
+//                }
+
                 // save the results of the current table
                 currentFile = calculator.getMostSimilarFile(currentFile);
             } else {
@@ -105,7 +110,22 @@ public class MainFrame {
                 loadedFileNumberLabel.setText(String.valueOf(loadedFiles.length));
 
                 calculator = new SheetSimilarityCalculator(loadedFiles);
-                calculator.calculate();
+//                calculator.calculate();
+                similarities = new HashMap<>();
+
+                try {
+                    BufferedReader bufferedReader = new BufferedReader(new FileReader("sheetSimilarity.txt"));
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        String[] splits = line.split("\t");
+                        similarities.putIfAbsent(splits[0], new LinkedHashMap<>());
+                        similarities.get(splits[0]).putIfAbsent(splits[1], Double.parseDouble(splits[2]));
+                    }
+                    calculator.setSimilarities(similarities);
+                    bufferedReader.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
 
                 submitAndNextFileButton.setEnabled(true);
                 submitAndFinishButton.setEnabled(true);

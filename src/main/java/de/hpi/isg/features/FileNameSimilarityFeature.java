@@ -1,8 +1,10 @@
 package de.hpi.isg.features;
 
+import de.hpi.isg.elements.Sheet;
 import info.debatty.java.stringsimilarity.NormalizedLevenshtein;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * @author Lan Jiang
@@ -13,9 +15,9 @@ public class FileNameSimilarityFeature extends SheetSimilarityFeature {
     private final NormalizedLevenshtein levenshtein = new NormalizedLevenshtein();
 
     @Override
-    double score(File file1, File file2) {
-        String fileName1 = file1.getName().split("@")[0];
-        String fileName2 = file2.getName().split("@")[0];
+    public double score(File file1, File file2, Map<String, Sheet> sheets) {
+        String fileName1 = sheets.get(file1.getName()).getFileName();
+        String fileName2 = sheets.get(file2.getName()).getFileName();
         return levenshtein.similarity(fileName1, fileName2);
     }
 }

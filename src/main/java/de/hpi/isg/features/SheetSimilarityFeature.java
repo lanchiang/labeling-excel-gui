@@ -1,6 +1,9 @@
 package de.hpi.isg.features;
 
+import de.hpi.isg.elements.Sheet;
+
 import java.io.File;
+import java.util.Map;
 
 /**
  *
@@ -8,7 +11,7 @@ import java.io.File;
  * @author Lan Jiang
  * @since 8/28/19
  */
-abstract class SheetSimilarityFeature {
+abstract public class SheetSimilarityFeature {
 
     // spreadsheet file name similarity
     // sheet count
@@ -23,7 +26,8 @@ abstract class SheetSimilarityFeature {
      * Calculate the feature score between the two given files.
      * @param file1 the first given file
      * @param file2 the second given file
+     * @param sheets
      * @return the feature score, between zero and one, inclusively
      */
-    abstract double score(File file1, File file2);
+    abstract public double score(File file1, File file2, Map<String, Sheet> sheets);
 }

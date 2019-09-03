@@ -1,6 +1,9 @@
 package de.hpi.isg.features;
 
+import de.hpi.isg.elements.Sheet;
+
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -9,18 +12,18 @@ import java.util.Map;
  */
 public class SheetAmountFeature extends SheetSimilarityFeature {
 
-    private final Map<String, Integer> sheetAmountByFileName;
+    private final Map<String, List<String>> sheetNamesByFileName;
 
-    public SheetAmountFeature(Map<String, Integer> sheetAmountByFileName) {
-        this.sheetAmountByFileName = sheetAmountByFileName;
+    public SheetAmountFeature(Map<String, List<String>> sheetAmountByFileName) {
+        this.sheetNamesByFileName = sheetAmountByFileName;
     }
 
     @Override
-    double score(File file1, File file2) {
-        String fileName1 = file1.getName().split("@")[0];
-        String fileName2 = file2.getName().split("@")[0];
-        int sheetAmount1 = sheetAmountByFileName.get(fileName1);
-        int sheetAmount2 = sheetAmountByFileName.get(fileName2);
+    public double score(File file1, File file2, Map<String, Sheet> sheets) {
+        String fileName1 = sheets.get(file1.getName()).getFileName();
+        String fileName2 = sheets.get(file2.getName()).getFileName();
+        int sheetAmount1 = sheetNamesByFileName.get(fileName1).size();
+        int sheetAmount2 = sheetNamesByFileName.get(fileName2).size();
 
         if (sheetAmount1 == 0 || sheetAmount2 == 0) {
             System.out.println("Sheet amount equals to zero.");
