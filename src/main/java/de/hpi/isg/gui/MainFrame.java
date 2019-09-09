@@ -1,6 +1,7 @@
 package de.hpi.isg.gui;
 
 import com.opencsv.CSVReader;
+import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.io.SheetSimilarityCalculator;
 
 import javax.swing.*;
@@ -72,10 +73,24 @@ public class MainFrame {
                 DefaultTableModel labelTableModel = (DefaultTableModel) labeledInfoTable.getModel();
 
                 // check whether the label info table is empty.
-//                if (labelTableModel.getRowCount() == 0) {
-//                    JOptionPane.showMessageDialog(null, "Please enter some labels for this data file.");
-//                    return;
-//                }
+                if (labelTableModel.getRowCount() == 0) {
+                    JOptionPane.showMessageDialog(null, "Please enter some labels for this data file.");
+                    return;
+                }
+
+                String[] nameSplits = currentFile.getName().split("@");
+                String fileName = nameSplits[0];
+                String sheetName = nameSplits[1].split(".csv")[0];
+
+                AnnotationResults results = new AnnotationResults(fileName, sheetName);
+                Vector dataVector = labelTableModel.getDataVector();
+                for (int i = 0; i < labelTableModel.getRowCount(); i++) {
+                    Vector row = (Vector) dataVector.elementAt(i);
+                    int startLineNumber = Integer.parseInt(row.elementAt(0).toString());
+                    int endLineNumber = Integer.parseInt(row.elementAt(1).toString());
+                    String lineType = String.valueOf(row.elementAt(2));
+                    results.addAnnotation(startLineNumber, endLineNumber, lineType);
+                }
 
                 // save the results of the current table
                 currentFile = calculator.getMostSimilarFile(currentFile);
@@ -89,14 +104,14 @@ public class MainFrame {
             }
 
             try {
-                loadFile(currentFile, sheetDisplayTable);
+                loadFile(currentFile);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         });
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
-            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/data-downloader"));
+            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/data/excel-to-csv"));
             chooser.setDialogTitle("Dialog title");
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             chooser.setAcceptAllFileFilterUsed(false);
@@ -239,13 +254,13 @@ public class MainFrame {
         labeledInfoTable = new JTable(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
     }
 
-    private void loadFile(final File file, JTable table) throws IOException {
+    private void loadFile(final File file) throws IOException {
         CSVReader reader = new CSVReader(new FileReader(file));
         List<String[]> dataEntries = reader.readAll();
 
         DefaultTableModel tableModel = new DefaultTableModel(0, dataEntries.get(0).length);
         dataEntries.forEach(tableModel::addRow);
-        table.setModel(tableModel);
+        sheetDisplayTable.setModel(tableModel);
 
         System.out.println(tableModel.getColumnCount() + "\t" + tableModel.getRowCount());
     }
