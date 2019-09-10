@@ -32,9 +32,4 @@ public class DatabaseAccess {
             throw new RuntimeException(e);
         }
     }
-
-    public static void main(String[] args) throws IOException {
-        Process p = Runtime.getRuntime().exec("create.sh");
-//        System.out.println(p.exitValue());
-    }
 }
