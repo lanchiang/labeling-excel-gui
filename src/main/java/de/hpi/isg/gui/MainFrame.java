@@ -1,8 +1,11 @@
 package de.hpi.isg.gui;
 
 import com.opencsv.CSVReader;
+import de.hpi.isg.dao.DatabaseConnector;
+import de.hpi.isg.dao.QueryHandler;
 import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.io.SheetSimilarityCalculator;
+import org.apache.commons.lang3.Validate;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -45,6 +48,8 @@ public class MainFrame {
 
     private SheetSimilarityCalculator calculator;
 
+    private QueryHandler queryHandler = new QueryHandler();
+
     public MainFrame() {
         $$$setupUI$$$();
         submitAndFinishButton.addActionListener(e -> {
@@ -70,10 +75,14 @@ public class MainFrame {
         submitAndNextFileButton.addActionListener(e -> {
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                DefaultTableModel labelTableModel = (DefaultTableModel) labeledInfoTable.getModel();
+                // Todo: get the label info table and store the information in the database.
+                DefaultTableModel labeledInfoTableModel = (DefaultTableModel) labeledInfoTable.getModel();
+                int columnCount = labeledInfoTableModel.getColumnCount();
+                Validate.isTrue(columnCount == 3);
+                int rowCount = labeledInfoTableModel.getRowCount();
 
                 // check whether the label info table is empty.
-                if (labelTableModel.getRowCount() == 0) {
+                if (labeledInfoTableModel.getRowCount() == 0) {
                     JOptionPane.showMessageDialog(null, "Please enter some labels for this data file.");
                     return;
                 }
@@ -83,14 +92,16 @@ public class MainFrame {
                 String sheetName = nameSplits[1].split(".csv")[0];
 
                 AnnotationResults results = new AnnotationResults(fileName, sheetName);
-                Vector dataVector = labelTableModel.getDataVector();
-                for (int i = 0; i < labelTableModel.getRowCount(); i++) {
+                Vector dataVector = labeledInfoTableModel.getDataVector();
+                for (int i = 0; i < labeledInfoTableModel.getRowCount(); i++) {
                     Vector row = (Vector) dataVector.elementAt(i);
                     int startLineNumber = Integer.parseInt(row.elementAt(0).toString());
                     int endLineNumber = Integer.parseInt(row.elementAt(1).toString());
                     String lineType = String.valueOf(row.elementAt(2));
                     results.addAnnotation(startLineNumber, endLineNumber, lineType);
                 }
+
+                this.queryHandler.insertLineFunctionAnnotationResults(results);
 
                 // save the results of the current table
                 currentFile = calculator.getMostSimilarFile(currentFile);

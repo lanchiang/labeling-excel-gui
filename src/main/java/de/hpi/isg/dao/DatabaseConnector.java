@@ -14,7 +14,7 @@ import java.sql.SQLException;
  * @author Lan Jiang
  * @since 9/9/19
  */
-public class DatabaseAccess {
+public class DatabaseConnector {
 
     /**
      * The connection to the database.
@@ -22,13 +22,23 @@ public class DatabaseAccess {
     @Getter
     private Connection connection;
 
-    public DatabaseAccess() {
+    public DatabaseConnector() {
+        runCreateDatabaseScript();
         // Todo: change the configuration
         try {
             Class.forName("org.postgresql.Driver");
             this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/line_function_db",
                     "Fuga", null);
+            this.connection.setAutoCommit(false);
         } catch (ClassNotFoundException | SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void runCreateDatabaseScript() {
+        try {
+            Runtime.getRuntime().exec("./src/main/resources/create.sh");
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

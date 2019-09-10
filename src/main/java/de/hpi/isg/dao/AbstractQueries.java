@@ -1,5 +1,7 @@
 package de.hpi.isg.dao;
 
+import de.hpi.isg.elements.AnnotationResults;
+
 /**
  * This interface defines a bunch of queries to the database.
  *
@@ -8,6 +10,8 @@ package de.hpi.isg.dao;
  */
 public interface AbstractQueries {
 
-    void insertLineFunctionAnnotationResults();
+    void insertLineFunctionAnnotationResults(AnnotationResults results);
+
+    int getDataFileIdByDataFileNameAndSpreadsheetName(String dataFileName, String spreadSheetName);
 
 }

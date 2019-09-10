@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS line_function
          data_file_id      int     NOT NULL,
          start_line_number int     NOT NULL,
          end_line_number   int     NOT NULL,
-         line_type         char(1) NOT NULL,
+         line_type         text NOT NULL,
          CONSTRAINT data_file_id_fk FOREIGN KEY (data_file_id)
              REFERENCES data_file (id) MATCH SIMPLE
              ON UPDATE CASCADE ON DELETE CASCADE

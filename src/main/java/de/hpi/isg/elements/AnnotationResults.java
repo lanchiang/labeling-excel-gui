@@ -17,6 +17,7 @@ public class AnnotationResults {
     @Getter
     private final Sheet sheet;
 
+    @Getter
     private final List<AnnotationResult> annotationResults = new LinkedList<>();
 
     public AnnotationResults(final String fileName, final String sheetName) {
