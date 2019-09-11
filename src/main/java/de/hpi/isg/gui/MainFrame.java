@@ -3,6 +3,11 @@ package de.hpi.isg.gui;
 import com.opencsv.CSVReader;
 import de.hpi.isg.dao.QueryHandler;
 import de.hpi.isg.elements.AnnotationResults;
+import de.hpi.isg.elements.Sheet;
+import de.hpi.isg.features.FileNameSimilarityFeature;
+import de.hpi.isg.features.SheetAmountFeature;
+import de.hpi.isg.features.SheetNameSimilarityFeature;
+import de.hpi.isg.features.SheetSimilarityFeature;
 import de.hpi.isg.io.SheetSimilarityCalculator;
 import org.apache.commons.lang3.Validate;
 
@@ -12,6 +17,7 @@ import java.awt.*;
 import java.io.*;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Lan Jiang
@@ -42,6 +48,8 @@ public class MainFrame {
     private File[] loadedFiles;
 
     private File currentFile;
+
+    private Sheet currentSheet;
 
     private Map<String, Map<String, Double>> similarities;
 
@@ -104,8 +112,14 @@ public class MainFrame {
 
                 this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
 
+                // Todo: get most similar file
+                List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
+                Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
+                currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
+                currentSheet = mostSimilarSheet;
+
                 // save the results of the current table
-                currentFile = calculator.getMostSimilarFile(currentFile);
+//                currentFile = calculator.getMostSimilarFile(currentFile);
 
                 this.labeledInfoTable.setModel(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
             } else {
@@ -114,6 +128,13 @@ public class MainFrame {
                 int selectedIndex = random.nextInt(loadedFiles.length);
 
                 currentFile = loadedFiles[selectedIndex];
+
+                String[] nameSplits = currentFile.getName().split("@");
+                String fileName = nameSplits[0];
+                String sheetName = nameSplits[1].split(".csv")[0];
+
+                int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
+                currentSheet = new Sheet(sheetName, fileName, amount);
             }
 
             System.out.println(currentFile.getName());
@@ -134,28 +155,26 @@ public class MainFrame {
             int choiceCode = chooser.showOpenDialog(loadAllFilesButton);
             if (choiceCode == JFileChooser.APPROVE_OPTION) {
                 File selectedDir = chooser.getSelectedFile();
-//                System.out.println(selectedDir.getPath());
                 loadedFiles = selectedDir.listFiles();
                 assert loadedFiles != null;
                 loadedFileNumberLabel.setText(String.valueOf(loadedFiles.length));
 
                 calculator = new SheetSimilarityCalculator(loadedFiles);
-//                calculator.calculate();
-                similarities = new HashMap<>();
 
-                try {
-                    BufferedReader bufferedReader = new BufferedReader(new FileReader("sheetSimilarity.txt"));
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        String[] splits = line.split("\t");
-                        similarities.putIfAbsent(splits[0], new LinkedHashMap<>());
-                        similarities.get(splits[0]).putIfAbsent(splits[1], Double.parseDouble(splits[2]));
-                    }
-                    calculator.setSimilarities(similarities);
-                    bufferedReader.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+//                similarities = new HashMap<>();
+//                try {
+//                    BufferedReader bufferedReader = new BufferedReader(new FileReader("sheetSimilarity.txt"));
+//                    String line;
+//                    while ((line = bufferedReader.readLine()) != null) {
+//                        String[] splits = line.split("\t");
+//                        similarities.putIfAbsent(splits[0], new LinkedHashMap<>());
+//                        similarities.get(splits[0]).putIfAbsent(splits[1], Double.parseDouble(splits[2]));
+//                    }
+//                    calculator.setSimilarities(similarities);
+//                    bufferedReader.close();
+//                } catch (IOException ex) {
+//                    ex.printStackTrace();
+//                }
 
                 this.queryHandler.loadExcelFileStatistics(calculator.getSheetNamesByFileName());
 
@@ -280,5 +299,29 @@ public class MainFrame {
         sheetDisplayTable.setModel(tableModel);
 
         System.out.println(tableModel.getColumnCount() + "\t" + tableModel.getRowCount());
+    }
+
+    private Sheet findMostSimilarSpreadsheet(Sheet current, List<Sheet> candidates) {
+        Set<SheetSimilarityFeature> features = new HashSet<>();
+        features.add(new FileNameSimilarityFeature());
+        features.add(new SheetNameSimilarityFeature());
+        features.add(new SheetAmountFeature());
+
+        features.forEach(feature -> feature.score(current, candidates));
+
+        Map<Sheet, Double> score = new HashMap<>();
+
+        features.stream().map(SheetSimilarityFeature::getScoreMap).forEach(map -> {
+            for (Map.Entry<Sheet, Double> entry : map.entrySet()) {
+                if (!score.containsKey(entry.getKey())) {
+                    score.put(entry.getKey(), entry.getValue());
+                } else {
+                    score.put(entry.getKey(), score.get(entry.getKey()) + entry.getValue());
+                }
+            }
+        });
+        final Map<Sheet, Double> newScore = score.entrySet().stream().sorted(Map.Entry.<Sheet, Double>comparingByValue().reversed())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+        return newScore.entrySet().iterator().next().getKey();
     }
 }

@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -139,7 +140,7 @@ public class QueryHandler implements AbstractQueries {
         Connection connection = databaseConnector.getConnection();
 
         int spreadsheet_id = getSpreadsheetIdByName(spreadsheetName, excel_file_name, connection);
-        String query = String.format("update spreadsheet set hasAnnotated = TRUE where id = %d", spreadsheet_id);
+        String query = String.format("update spreadsheet set has_annotated = TRUE where id = %d", spreadsheet_id);
         executeUpdate(query, connection);
 
         try {
@@ -147,6 +148,75 @@ public class QueryHandler implements AbstractQueries {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public List<Sheet> getAllUnannotatedSpreadsheet() {
+        Connection connection = databaseConnector.getConnection();
+
+        String query = "select spreadsheet.spread_sheet_name, excel_file.excel_file_name, excel_file.spreadsheet_number from spreadsheet, excel_file " +
+                "where spreadsheet.excel_file_id = excel_file.id and spreadsheet.has_annotated = FALSE";
+
+        List<Sheet> results = new LinkedList<>();
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                String spreadsheetName = resultSet.getString("spread_sheet_name");
+                String excelFileName = resultSet.getString("excel_file_name");
+                int spreadSheetAmount = resultSet.getInt("spreadsheet_number");
+                Sheet sheet = new Sheet(spreadsheetName, excelFileName, spreadSheetAmount);
+                results.add(sheet);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return results;
+    }
+
+    @Override
+    public Sheet getSheetById(int id) {
+        Connection connection = databaseConnector.getConnection();
+
+        String query = String.format("select spreadsheet.spread_sheet_name, excel_file.excel_file_name, excel_file.spreadsheet_number from spreadsheet, excel_file " +
+                "where spreadsheet.excel_file_id = excel_file.id and spreadsheet.id = %d", id);
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(query);
+
+            Sheet sheet = null;
+            if (resultSet.next()) {
+                String sheetName = resultSet.getString("spread_sheet_name");
+                String excelName = resultSet.getString("excel_file_name");
+                int sheetAmount = resultSet.getInt("spreadsheet_number");
+                sheet = new Sheet(sheetName, excelName, sheetAmount);
+            }
+            return sheet;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public int getSheetAmountByExcelName(String excelName) {
+        Connection connection = databaseConnector.getConnection();
+
+        String query = String.format("select spreadsheet_number from excel_file where excel_file_name = '%s'", excelName);
+
+        int sheetAmount = 0;
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(query);
+
+            if (resultSet.next()) {
+                sheetAmount = resultSet.getInt("spreadsheet_number");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return sheetAmount;
     }
 
     private void executeUpdate(String query, Connection connection) {
@@ -160,5 +230,4 @@ public class QueryHandler implements AbstractQueries {
             e.printStackTrace();
         }
     }
-
 }

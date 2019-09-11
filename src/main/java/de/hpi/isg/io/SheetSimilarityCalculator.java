@@ -113,6 +113,10 @@ public class SheetSimilarityCalculator {
         return new File("/Users/Fuga/Documents/hpi/code/data-downloader/data_excel_uk_converted/" + candidates.entrySet().iterator().next().getKey());
     }
 
+    public File getMostSimilarFile(Sheet sheet) {
+        return new File("/Users/Fuga/Documents/hpi/code/data-downloader/data_excel_uk_converted/" + sheet.getFileName() + "@" + sheet.getSheetName() + ".csv");
+    }
+
     public static void main(String[] args) {
         File[] files = new File("/Users/Fuga/Documents/hpi/code/data-downloader/data_excel_uk_converted").listFiles();
         SheetSimilarityCalculator calculator = new SheetSimilarityCalculator(files);

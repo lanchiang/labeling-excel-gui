@@ -28,4 +28,10 @@ public interface AbstractQueries {
     void loadExcelFileStatistics(Map<String, List<String>> sheetNamesByExcelFileName);
 
     void updateSpreadsheetAnnotationStatus(String spreadsheetName, String excel_file_name);
+
+    List<Sheet> getAllUnannotatedSpreadsheet();
+
+    Sheet getSheetById(int id);
+
+    int getSheetAmountByExcelName(String excelName);
 }

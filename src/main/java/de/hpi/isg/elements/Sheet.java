@@ -16,8 +16,19 @@ public class Sheet {
     @Getter
     private final String fileName;
 
+    /**
+     * Number of spreadsheets in the excel file that contains this spreadsheet.
+     */
+    @Getter
+    private final int numOfSpreadsheetsOfExcelFile;
+
     public Sheet(String sheetName, String fileName) {
+        this(sheetName, fileName, 0);
+    }
+
+    public Sheet(String sheetName, String fileName, int numOfSpreadsheetsOfExcelFile) {
         this.sheetName = sheetName;
         this.fileName = fileName;
+        this.numOfSpreadsheetsOfExcelFile = numOfSpreadsheetsOfExcelFile;
     }
 }

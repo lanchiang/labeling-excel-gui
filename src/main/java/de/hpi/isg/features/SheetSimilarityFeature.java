@@ -1,8 +1,10 @@
 package de.hpi.isg.features;
 
 import de.hpi.isg.elements.Sheet;
+import lombok.Getter;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,6 +14,9 @@ import java.util.Map;
  * @since 8/28/19
  */
 abstract public class SheetSimilarityFeature {
+
+    @Getter
+    protected Map<Sheet, Double> scoreMap;
 
     // spreadsheet file name similarity
     // sheet count
@@ -30,4 +35,6 @@ abstract public class SheetSimilarityFeature {
      * @return the feature score, between zero and one, inclusively
      */
     abstract public double score(File file1, File file2, Map<String, Sheet> sheets);
+
+    abstract public void score(Sheet current, List<Sheet> candidateSheets);
 }

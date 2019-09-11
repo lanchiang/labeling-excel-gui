@@ -3,6 +3,7 @@ package de.hpi.isg.features;
 import de.hpi.isg.elements.Sheet;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,10 @@ public class SheetAmountFeature extends SheetSimilarityFeature {
 
     public SheetAmountFeature(Map<String, List<String>> sheetAmountByFileName) {
         this.sheetNamesByFileName = sheetAmountByFileName;
+    }
+
+    public SheetAmountFeature() {
+        sheetNamesByFileName = new HashMap<>();
     }
 
     @Override
@@ -37,5 +42,28 @@ public class SheetAmountFeature extends SheetSimilarityFeature {
             score = (double) sheetAmount1 / (double) sheetAmount2;
         }
         return score;
+    }
+
+    @Override
+    public void score(Sheet current, List<Sheet> candidateSheets) {
+        scoreMap = new HashMap<>();
+        candidateSheets.forEach(sheet -> {
+            int currentSheetAmount = current.getNumOfSpreadsheetsOfExcelFile();
+            int sheetAmount = sheet.getNumOfSpreadsheetsOfExcelFile();
+
+            if (currentSheetAmount == 0 || sheetAmount == 0) {
+                System.out.println("Sheet amount equals to zero.");
+                scoreMap.putIfAbsent(sheet, 0.0);
+            }
+
+            double score;
+            if (currentSheetAmount > sheetAmount) {
+                score = (double) sheetAmount / (double) currentSheetAmount;
+            } else {
+                score = (double) currentSheetAmount / (double) sheetAmount;
+            }
+
+            scoreMap.putIfAbsent(sheet, score);
+        });
     }
 }
