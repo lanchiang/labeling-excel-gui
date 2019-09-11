@@ -19,7 +19,6 @@ public class DatabaseConnector {
     /**
      * The connection to the database.
      */
-    @Getter
     private Connection connection;
 
     public DatabaseConnector() {
@@ -33,6 +32,18 @@ public class DatabaseConnector {
         } catch (ClassNotFoundException | SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Connection getConnection() {
+        try {
+            Class.forName("org.postgresql.Driver");
+            this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/line_function_db",
+                    "Fuga", null);
+            this.connection.setAutoCommit(false);
+        } catch (ClassNotFoundException | SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return connection;
     }
 
     private void runCreateDatabaseScript() {

@@ -1,7 +1,6 @@
 package de.hpi.isg.gui;
 
 import com.opencsv.CSVReader;
-import de.hpi.isg.dao.DatabaseConnector;
 import de.hpi.isg.dao.QueryHandler;
 import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.io.SheetSimilarityCalculator;
@@ -130,7 +129,7 @@ public class MainFrame {
             int choiceCode = chooser.showOpenDialog(loadAllFilesButton);
             if (choiceCode == JFileChooser.APPROVE_OPTION) {
                 File selectedDir = chooser.getSelectedFile();
-                System.out.println(selectedDir.getPath());
+//                System.out.println(selectedDir.getPath());
                 loadedFiles = selectedDir.listFiles();
                 assert loadedFiles != null;
                 loadedFileNumberLabel.setText(String.valueOf(loadedFiles.length));
@@ -152,6 +151,8 @@ public class MainFrame {
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
+
+                this.queryHandler.loadExcelFileStatistics(calculator.getSheetNamesByFileName());
 
                 submitAndNextFileButton.setEnabled(true);
                 submitAndFinishButton.setEnabled(true);

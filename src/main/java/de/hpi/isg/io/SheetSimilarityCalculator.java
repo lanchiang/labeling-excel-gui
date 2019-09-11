@@ -31,6 +31,7 @@ public class SheetSimilarityCalculator {
 
     private final Map<File, Map<File, Double>> topSimilarFilesByFile = new HashMap<>();
 
+    @Getter
     private final Map<String, List<String>> sheetNamesByFileName = new HashMap<>();
 
     @Getter @Setter
