@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS spreadsheet
     id                serial PRIMARY KEY,
     excel_file_id   int NOT NULL,
     spread_sheet_name text NOT NULL,
+    hasAnnotated    bool    NOT NULL DEFAULT FALSE,
     CONSTRAINT excel_file_id_fk FOREIGN KEY (excel_file_id)
         REFERENCES excel_file (id) MATCH SIMPLE
         ON UPDATE CASCADE ON DELETE CASCADE

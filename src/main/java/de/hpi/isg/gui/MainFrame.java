@@ -102,16 +102,21 @@ public class MainFrame {
 
                 this.queryHandler.insertLineFunctionAnnotationResults(results);
 
+                this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
+
                 // save the results of the current table
                 currentFile = calculator.getMostSimilarFile(currentFile);
+
+                this.labeledInfoTable.setModel(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
             } else {
                 // load a random new table
                 Random random = new Random(System.currentTimeMillis());
                 int selectedIndex = random.nextInt(loadedFiles.length);
-                System.out.println(loadedFiles[selectedIndex].getName());
 
                 currentFile = loadedFiles[selectedIndex];
             }
+
+            System.out.println(currentFile.getName());
 
             try {
                 loadFile(currentFile);

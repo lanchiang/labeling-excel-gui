@@ -26,4 +26,6 @@ public interface AbstractQueries {
     int getSpreadsheetIdByName(String spreadsheetName, String excel_file_name, Connection connection);
 
     void loadExcelFileStatistics(Map<String, List<String>> sheetNamesByExcelFileName);
+
+    void updateSpreadsheetAnnotationStatus(String spreadsheetName, String excel_file_name);
 }

@@ -34,14 +34,6 @@ public class QueryHandler implements AbstractQueries {
         String fileName = sheet.getFileName().replace("'", "''");
         String spreadSheetName = sheet.getSheetName();
 
-//        final int excel_file_id = getExcelFileIdByName(fileName);
-
-//        String query = String.format("insert into spreadsheet (excel_file_id, spread_sheet_name) values (%d, \'%s\')", excel_file_id, spreadSheetName);
-//
-//        executeUpdate(query);
-
-//        final int data_file_id = getDataFileIdByDataFileNameAndSpreadsheetName(fileName, spreadSheetName);
-
         final int spreadsheet_id = getSpreadsheetIdByName(spreadSheetName, fileName, connection);
 
         List<AnnotationResults.AnnotationResult> results = annotationResults.getAnnotationResults();
@@ -53,7 +45,7 @@ public class QueryHandler implements AbstractQueries {
                     spreadsheet_id, startLineNumber, endLineNumber, lineType.toString()), databaseConnector.getConnection());
         });
 
-        System.out.println("Records created successfully");
+//        System.out.println("Records created successfully");
     }
 
     @Override
@@ -106,10 +98,8 @@ public class QueryHandler implements AbstractQueries {
     @Override
     public void loadExcelFileStatistics(Map<String, List<String>> sheetNamesByExcelFileName) {
         Connection connection;
-        Statement statement;
         try {
             connection = databaseConnector.getConnection();
-            statement = connection.createStatement();
 
             for (Map.Entry<String, List<String>> entry : sheetNamesByExcelFileName.entrySet()) {
                 String excelFileName = entry.getKey().replace("'", "''");
@@ -138,9 +128,21 @@ public class QueryHandler implements AbstractQueries {
             }
 //            connection.commit();
 
-            if (statement != null) {
-                statement.close();
-            }
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void updateSpreadsheetAnnotationStatus(String spreadsheetName, String excel_file_name) {
+        Connection connection = databaseConnector.getConnection();
+
+        int spreadsheet_id = getSpreadsheetIdByName(spreadsheetName, excel_file_name, connection);
+        String query = String.format("update spreadsheet set hasAnnotated = TRUE where id = %d", spreadsheet_id);
+        executeUpdate(query, connection);
+
+        try {
             connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
