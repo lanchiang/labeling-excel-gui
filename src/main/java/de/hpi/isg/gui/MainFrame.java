@@ -9,6 +9,7 @@ import de.hpi.isg.features.SheetAmountFeature;
 import de.hpi.isg.features.SheetNameSimilarityFeature;
 import de.hpi.isg.features.SheetSimilarityFeature;
 import de.hpi.isg.io.SheetSimilarityCalculator;
+import de.hpi.isg.swing.RowNumberTable;
 import org.apache.commons.lang3.Validate;
 
 import javax.swing.*;
@@ -210,11 +211,8 @@ public class MainFrame {
         titleLabel = new JLabel();
         titleLabel.setText("Excel File Line Function Annotator");
         mainPagePanel.add(titleLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        sheetDisplayPane = new JScrollPane();
         mainPagePanel.add(sheetDisplayPane, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
         sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
-        sheetDisplayTable = new JTable();
-        sheetDisplayPane.setViewportView(sheetDisplayTable);
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
         mainPagePanel.add(panel1, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -288,6 +286,13 @@ public class MainFrame {
     private void createUIComponents() {
         // TODO: place custom component creation code here
         labeledInfoTable = new JTable(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
+
+        sheetDisplayTable = new JTable();
+        sheetDisplayPane = new JScrollPane(sheetDisplayTable);
+        JTable rowTable = new RowNumberTable(sheetDisplayTable);
+        sheetDisplayPane.setRowHeaderView(rowTable);
+        sheetDisplayPane.setCorner(JScrollPane.UPPER_LEFT_CORNER,
+                rowTable.getTableHeader());
     }
 
     private void loadFile(final File file) throws IOException {
