@@ -125,7 +125,7 @@ public class QueryHandler implements AbstractQueries {
 //                }
 
                 final int excel_file_id = getExcelFileIdByName(excelFileName, connection);
-                System.out.println(excel_file_id);
+//                System.out.println(excel_file_id);
 
                 for (String spreadSheetName : entry.getValue()) {
                     String query = String.format("insert into spreadsheet (excel_file_id, spread_sheet_name) values (%d, \'%s\')", excel_file_id, spreadSheetName.replace("'", "''"));

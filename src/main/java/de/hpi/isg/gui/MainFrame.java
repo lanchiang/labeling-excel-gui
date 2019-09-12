@@ -302,9 +302,8 @@ public class MainFrame {
     }
 
     private void createUIComponents() {
-        // TODO: place custom component creation code here
-
         labeledInfoTable = new JTable(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
+        labeledInfoTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         sheetDisplayTable = new JTable();
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
