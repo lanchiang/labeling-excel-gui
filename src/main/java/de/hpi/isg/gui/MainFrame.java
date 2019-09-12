@@ -13,6 +13,8 @@ import de.hpi.isg.swing.RowNumberTable;
 import org.apache.commons.lang3.Validate;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
@@ -101,11 +103,9 @@ public class MainFrame {
         submitAndNextFileButton.addActionListener(e -> {
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                // Todo: get the label info table and store the information in the database.
                 DefaultTableModel labeledInfoTableModel = (DefaultTableModel) labeledInfoTable.getModel();
                 int columnCount = labeledInfoTableModel.getColumnCount();
                 Validate.isTrue(columnCount == 3);
-                int rowCount = labeledInfoTableModel.getRowCount();
 
                 // check whether the label info table is empty.
                 if (labeledInfoTableModel.getRowCount() == 0) {
@@ -195,6 +195,17 @@ public class MainFrame {
             @Override
             public void focusLost(FocusEvent e) {
                 deleteButton.setEnabled(false);
+            }
+        });
+        ListSelectionModel sheetDisplayTableSelectionModel = sheetDisplayTable.getSelectionModel();
+        sheetDisplayTableSelectionModel.addListSelectionListener(e -> {
+            if (!sheetDisplayTableSelectionModel.isSelectionEmpty()) {
+                int startIndex = sheetDisplayTableSelectionModel.getMinSelectionIndex() + 1;
+                int endIndex = sheetDisplayTableSelectionModel.getMaxSelectionIndex() + 1;
+                if (endIndex - startIndex > 0) {
+                    this.endLine.setText(String.valueOf(endIndex));
+                    this.startLine.setText(String.valueOf(startIndex));
+                }
             }
         });
     }
