@@ -48,29 +48,30 @@ public class AnnotationResults {
         }
 
         private LineType getLineType(String type) {
+            // empty lines will be filled automatically.
             LineType innerType;
             switch (type) {
-                case "P": {
+                case "Preamble (P)": {
                     innerType = LineType.PREAMBLE;
                     break;
                 }
-                case "H": {
+                case "Header (H)": {
                     innerType = LineType.HEADER;
                     break;
                 }
-                case "D": {
+                case "Data (D)": {
                     innerType = LineType.DATA;
                     break;
                 }
-                case "A": {
+                case "Aggregation (A)": {
                     innerType = LineType.AGGREGATION;
                     break;
                 }
-                case "F": {
+                case "Footnote (F)": {
                     innerType = LineType.FOOTNOTE;
                     break;
                 }
-                case "G": {
+                case "Group Header (G)": {
                     innerType = LineType.GROUP_HEADER;
                     break;
                 }
@@ -89,6 +90,7 @@ public class AnnotationResults {
         DATA,
         AGGREGATION,
         FOOTNOTE,
-        GROUP_HEADER
+        GROUP_HEADER,
+        EMPTY
     }
 }

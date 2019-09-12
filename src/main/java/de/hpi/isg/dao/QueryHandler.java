@@ -37,15 +37,25 @@ public class QueryHandler implements AbstractQueries {
 
         final int spreadsheet_id = getSpreadsheetIdByName(spreadSheetName, fileName, connection);
 
+
+        int lastEndLineNumber = 0;
         List<AnnotationResults.AnnotationResult> results = annotationResults.getAnnotationResults();
-        results.forEach(result -> {
+        for (AnnotationResults.AnnotationResult result : results) {
             int startLineNumber = result.getStartLineNumber();
             int endLineNumber = result.getEndLineNumber();
             AnnotationResults.LineType lineType = result.getType();
+
+            // fill the blank row block automatically.
+            if (startLineNumber > lastEndLineNumber + 1) {
+                String query = String.format("insert into line_function (spreadsheet_id, start_line_number, end_line_number, line_type) values (%d, %d, %d, \'%s\')",
+                        spreadsheet_id, lastEndLineNumber + 1, startLineNumber - 1, AnnotationResults.LineType.EMPTY);
+                executeUpdate(query, databaseConnector.getConnection());
+            }
+
             executeUpdate(String.format("insert into line_function (spreadsheet_id, start_line_number, end_line_number, line_type) values (%d, %d, %d, \'%s\')",
                     spreadsheet_id, startLineNumber, endLineNumber, lineType.toString()), databaseConnector.getConnection());
-        });
-
+            lastEndLineNumber = endLineNumber;
+        }
 //        System.out.println("Records created successfully");
     }
 

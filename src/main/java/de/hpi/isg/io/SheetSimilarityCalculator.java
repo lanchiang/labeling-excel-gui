@@ -110,11 +110,11 @@ public class SheetSimilarityCalculator {
 
     public File getMostSimilarFile(File file) {
         Map<String, Double> candidates = similarities.get(file.getName());
-        return new File("/Users/Fuga/Documents/hpi/code/data-downloader/data_excel_uk_converted/" + candidates.entrySet().iterator().next().getKey());
+        return new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/" + candidates.entrySet().iterator().next().getKey());
     }
 
     public File getMostSimilarFile(Sheet sheet) {
-        return new File("/Users/Fuga/Documents/hpi/code/data-downloader/data_excel_uk_converted/" + sheet.getFileName() + "@" + sheet.getSheetName() + ".csv");
+        return new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/" + sheet.getFileName() + "@" + sheet.getSheetName() + ".csv");
     }
 
     public static void main(String[] args) {

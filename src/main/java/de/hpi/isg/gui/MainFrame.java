@@ -14,7 +14,12 @@ import org.apache.commons.lang3.Validate;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.*;
 import java.util.*;
 import java.util.List;
@@ -45,6 +50,7 @@ public class MainFrame {
     private JButton loadAllFilesButton;
     private JLabel loadedFileLabel;
     private JLabel loadedFileNumberLabel;
+    private JButton deleteButton;
 
     private File[] loadedFiles;
 
@@ -62,22 +68,34 @@ public class MainFrame {
         $$$setupUI$$$();
         submitAndFinishButton.addActionListener(e -> {
         });
-        addButton.addActionListener(e -> {
-            if (startLine.getText().equals("") || endLine.getText().equals("")) {
-                JOptionPane.showMessageDialog(null, "Start Line or End Line cannot be empty.");
-            } else if (!startLine.getText().matches("\\d+") || !endLine.getText().matches("\\d+")) {
-                JOptionPane.showMessageDialog(null, "Start line or End Line value is not valid integer.");
-            } else if (Integer.parseInt(startLine.getText()) > Integer.parseInt(endLine.getText())) {
-                JOptionPane.showMessageDialog(null, "The start line index cannot be larger than the end line index.");
-            } else if (lineTypeComboBox.getSelectedIndex() == 0) {
-                JOptionPane.showMessageDialog(null, "Please select a line function type");
-            } else {
+        addButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (startLine.getText().equals("") || endLine.getText().equals("")) {
+                    JOptionPane.showMessageDialog(null, "Start Line or End Line cannot be empty.");
+                } else if (!startLine.getText().matches("\\d+") || !endLine.getText().matches("\\d+")) {
+                    JOptionPane.showMessageDialog(null, "Start line or End Line value is not valid integer.");
+                } else if (Integer.parseInt(startLine.getText()) > Integer.parseInt(endLine.getText())) {
+                    JOptionPane.showMessageDialog(null, "The start line index cannot be larger than the end line index.");
+                } else if (lineTypeComboBox.getSelectedIndex() == 0) {
+                    JOptionPane.showMessageDialog(null, "Please select a line function type");
+                } else {
+                    DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
+                    String[] row = new String[tableModel.getColumnCount()];
+                    row[0] = startLine.getText();
+                    row[1] = endLine.getText();
+                    row[2] = Objects.requireNonNull(lineTypeComboBox.getSelectedItem()).toString();
+                    tableModel.addRow(row);
+                }
+            }
+        });
+        deleteButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
-                String[] row = new String[tableModel.getColumnCount()];
-                row[0] = startLine.getText();
-                row[1] = endLine.getText();
-                row[2] = Objects.requireNonNull(lineTypeComboBox.getSelectedItem()).toString();
-                tableModel.addRow(row);
+                tableModel.removeRow(labeledInfoTable.getSelectedRow());
+
+                labeledInfoTable.getSelectionModel().clearSelection();
             }
         });
         submitAndNextFileButton.addActionListener(e -> {
@@ -113,14 +131,11 @@ public class MainFrame {
 
                 this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
 
-                // Todo: get most similar file
+                // get the most similar file
                 List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
                 Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
                 currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
                 currentSheet = mostSimilarSheet;
-
-                // save the results of the current table
-//                currentFile = calculator.getMostSimilarFile(currentFile);
 
                 this.labeledInfoTable.setModel(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
             } else {
@@ -162,21 +177,6 @@ public class MainFrame {
 
                 calculator = new SheetSimilarityCalculator(loadedFiles);
 
-//                similarities = new HashMap<>();
-//                try {
-//                    BufferedReader bufferedReader = new BufferedReader(new FileReader("sheetSimilarity.txt"));
-//                    String line;
-//                    while ((line = bufferedReader.readLine()) != null) {
-//                        String[] splits = line.split("\t");
-//                        similarities.putIfAbsent(splits[0], new LinkedHashMap<>());
-//                        similarities.get(splits[0]).putIfAbsent(splits[1], Double.parseDouble(splits[2]));
-//                    }
-//                    calculator.setSimilarities(similarities);
-//                    bufferedReader.close();
-//                } catch (IOException ex) {
-//                    ex.printStackTrace();
-//                }
-
                 this.queryHandler.loadExcelFileStatistics(calculator.getSheetNamesByFileName());
 
                 submitAndNextFileButton.setEnabled(true);
@@ -186,12 +186,24 @@ public class MainFrame {
         submitAndFinishButton.addActionListener(e -> {
             // write the results into a json file.
         });
+        labeledInfoTable.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                deleteButton.setEnabled(true);
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                deleteButton.setEnabled(false);
+            }
+        });
     }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("MainFrame");
         frame.setContentPane(new MainFrame().mainPagePanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setExtendedState(Frame.MAXIMIZED_BOTH);
         frame.pack();
         frame.setVisible(true);
     }
@@ -217,7 +229,7 @@ public class MainFrame {
         panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
         mainPagePanel.add(panel1, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         labelOperatingPanel = new JPanel();
-        labelOperatingPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
+        labelOperatingPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 4, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(labelOperatingPanel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(311, 56), null, 1, false));
         startLineLabel = new JLabel();
         startLineLabel.setText("Start Line");
@@ -227,26 +239,32 @@ public class MainFrame {
         labelOperatingPanel.add(endLineLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         lineTypeLabel = new JLabel();
         lineTypeLabel.setText("Line Function Type");
-        labelOperatingPanel.add(lineTypeLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        lineTypeLabel.setVerticalAlignment(0);
+        lineTypeLabel.setVerticalTextPosition(0);
+        labelOperatingPanel.add(lineTypeLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(151, 16), null, 1, false));
         endLine = new JTextField();
-        labelOperatingPanel.add(endLine, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, -1), new Dimension(50, -1), new Dimension(50, -1), 2, false));
+        labelOperatingPanel.add(endLine, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 2, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, -1), new Dimension(50, -1), new Dimension(50, -1), 2, false));
         lineTypeComboBox = new JComboBox();
+        lineTypeComboBox.setEditable(false);
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
         defaultComboBoxModel1.addElement("-");
-        defaultComboBoxModel1.addElement("P");
-        defaultComboBoxModel1.addElement("H");
-        defaultComboBoxModel1.addElement("D");
-        defaultComboBoxModel1.addElement("A");
-        defaultComboBoxModel1.addElement("F");
-        defaultComboBoxModel1.addElement("G");
-        defaultComboBoxModel1.addElement("E");
+        defaultComboBoxModel1.addElement("Preamble (P)");
+        defaultComboBoxModel1.addElement("Header (H)");
+        defaultComboBoxModel1.addElement("Data (D)");
+        defaultComboBoxModel1.addElement("Aggregation (A)");
+        defaultComboBoxModel1.addElement("Footnote (F)");
+        defaultComboBoxModel1.addElement("Group Header (G)");
         lineTypeComboBox.setModel(defaultComboBoxModel1);
-        labelOperatingPanel.add(lineTypeComboBox, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(80, -1), new Dimension(80, -1), new Dimension(80, -1), 2, false));
+        labelOperatingPanel.add(lineTypeComboBox, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 2, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(80, -1), new Dimension(151, 27), new Dimension(160, -1), 2, false));
         startLine = new JTextField();
-        labelOperatingPanel.add(startLine, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, -1), new Dimension(50, -1), new Dimension(50, -1), 2, false));
+        labelOperatingPanel.add(startLine, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 2, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, -1), new Dimension(50, -1), new Dimension(50, -1), 2, false));
         addButton = new JButton();
         addButton.setText("Add");
         labelOperatingPanel.add(addButton, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        deleteButton = new JButton();
+        deleteButton.setEnabled(false);
+        deleteButton.setText("Delete");
+        labelOperatingPanel.add(deleteButton, new com.intellij.uiDesigner.core.GridConstraints(2, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 3, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         scrollPane1.setBorder(BorderFactory.createTitledBorder("Labeled Lines"));
@@ -285,6 +303,7 @@ public class MainFrame {
 
     private void createUIComponents() {
         // TODO: place custom component creation code here
+
         labeledInfoTable = new JTable(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
 
         sheetDisplayTable = new JTable();
@@ -299,9 +318,21 @@ public class MainFrame {
         CSVReader reader = new CSVReader(new FileReader(file));
         List<String[]> dataEntries = reader.readAll();
 
-        DefaultTableModel tableModel = new DefaultTableModel(0, dataEntries.get(0).length);
+        DefaultTableModel tableModel = new DefaultTableModel(0, dataEntries.get(0).length) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         dataEntries.forEach(tableModel::addRow);
         sheetDisplayTable.setModel(tableModel);
+
+        sheetDisplayTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+        for (int i = 0; i < dataEntries.get(0).length; i++) {
+            TableColumn column = sheetDisplayTable.getColumnModel().getColumn(i);
+            column.setPreferredWidth(150);
+        }
 
         System.out.println(tableModel.getColumnCount() + "\t" + tableModel.getRowCount());
     }
