@@ -15,7 +15,7 @@ public class LineTypeBackgroundColorTableRowRenderer implements TableCellRendere
 
     public static final DefaultTableCellRenderer DEFAULT_RENDERER = new DefaultTableCellRenderer();
 
-    private static final int OPACITY_PARAMETER = 64;
+    private static final int OPACITY_PARAMETER = 96;
 
     private static final Color DEFAULT_COLOR = ColorSolution.WHITE;
 
