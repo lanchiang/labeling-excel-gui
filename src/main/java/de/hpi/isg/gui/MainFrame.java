@@ -2,7 +2,6 @@ package de.hpi.isg.gui;
 
 import com.opencsv.CSVReader;
 import de.hpi.isg.dao.QueryHandler;
-import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.elements.Sheet;
 import de.hpi.isg.features.FileNameSimilarityFeature;
 import de.hpi.isg.features.SheetAmountFeature;
@@ -11,22 +10,16 @@ import de.hpi.isg.features.SheetSimilarityFeature;
 import de.hpi.isg.io.SheetSimilarityCalculator;
 import de.hpi.isg.swing.LineTypeBackgroundColorTableRowRenderer;
 import de.hpi.isg.swing.RowNumberTable;
-import org.apache.commons.lang3.Validate;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -77,22 +70,7 @@ public class MainFrame {
         addButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (startLine.getText().equals("") || endLine.getText().equals("")) {
-                    JOptionPane.showMessageDialog(null, "Start Line or End Line cannot be empty.");
-                } else if (!startLine.getText().matches("\\d+") || !endLine.getText().matches("\\d+")) {
-                    JOptionPane.showMessageDialog(null, "Start line or End Line value is not valid integer.");
-                } else if (Integer.parseInt(startLine.getText()) > Integer.parseInt(endLine.getText())) {
-                    JOptionPane.showMessageDialog(null, "The start line index cannot be larger than the end line index.");
-                } else if (lineTypeComboBox.getSelectedIndex() == 0) {
-                    JOptionPane.showMessageDialog(null, "Please select a line function type");
-                } else {
-                    DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
-                    String[] row = new String[tableModel.getColumnCount()];
-                    row[0] = startLine.getText();
-                    row[1] = endLine.getText();
-                    row[2] = Objects.requireNonNull(lineTypeComboBox.getSelectedItem()).toString();
-                    tableModel.addRow(row);
-                }
+                addToLabelInfoTable();
             }
         });
         deleteButton.addMouseListener(new MouseAdapter() {
@@ -105,59 +83,59 @@ public class MainFrame {
             }
         });
         submitAndNextFileButton.addActionListener(e -> {
-            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
-            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                DefaultTableModel labeledInfoTableModel = (DefaultTableModel) labeledInfoTable.getModel();
-                int columnCount = labeledInfoTableModel.getColumnCount();
-                Validate.isTrue(columnCount == 3);
+//            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
+//            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
+//                DefaultTableModel labeledInfoTableModel = (DefaultTableModel) labeledInfoTable.getModel();
+//                int columnCount = labeledInfoTableModel.getColumnCount();
+//                Validate.isTrue(columnCount == 3);
+//
+//                // check whether the label info table is empty.
+//                if (labeledInfoTableModel.getRowCount() == 0) {
+//                    JOptionPane.showMessageDialog(null, "Please enter some labels for this data file.");
+//                    return;
+//                }
+//
+//                String[] nameSplits = currentFile.getName().split("@");
+//                String fileName = nameSplits[0];
+//                String sheetName = nameSplits[1].split(".csv")[0];
+//
+//                AnnotationResults results = new AnnotationResults(fileName, sheetName);
+//                Vector dataVector = labeledInfoTableModel.getDataVector();
+//                for (int i = 0; i < labeledInfoTableModel.getRowCount(); i++) {
+//                    Vector row = (Vector) dataVector.elementAt(i);
+//                    int startLineNumber = Integer.parseInt(row.elementAt(0).toString());
+//                    int endLineNumber = Integer.parseInt(row.elementAt(1).toString());
+//                    String lineType = String.valueOf(row.elementAt(2));
+//                    results.addAnnotation(startLineNumber, endLineNumber, lineType);
+//                }
+//
+//                this.queryHandler.insertLineFunctionAnnotationResults(results);
+//
+//                this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
+//
+//                // get the most similar file
+//                List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
+//                Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
+//                currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
+//                currentSheet = mostSimilarSheet;
+//
+//                this.labeledInfoTable.setModel(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
+//            } else {
+//                // load a random new table
+//                Random random = new Random(System.currentTimeMillis());
+//                int selectedIndex = random.nextInt(loadedFiles.length);
+//
+//                currentFile = loadedFiles[selectedIndex];
+//
+//                String[] nameSplits = currentFile.getName().split("@");
+//                String fileName = nameSplits[0];
+//                String sheetName = nameSplits[1].split(".csv")[0];
+//
+//                int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
+//                currentSheet = new Sheet(sheetName, fileName, amount);
+//            }
 
-                // check whether the label info table is empty.
-                if (labeledInfoTableModel.getRowCount() == 0) {
-                    JOptionPane.showMessageDialog(null, "Please enter some labels for this data file.");
-                    return;
-                }
-
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                AnnotationResults results = new AnnotationResults(fileName, sheetName);
-                Vector dataVector = labeledInfoTableModel.getDataVector();
-                for (int i = 0; i < labeledInfoTableModel.getRowCount(); i++) {
-                    Vector row = (Vector) dataVector.elementAt(i);
-                    int startLineNumber = Integer.parseInt(row.elementAt(0).toString());
-                    int endLineNumber = Integer.parseInt(row.elementAt(1).toString());
-                    String lineType = String.valueOf(row.elementAt(2));
-                    results.addAnnotation(startLineNumber, endLineNumber, lineType);
-                }
-
-                this.queryHandler.insertLineFunctionAnnotationResults(results);
-
-                this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
-
-                // get the most similar file
-                List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
-                Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
-                currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
-                currentSheet = mostSimilarSheet;
-
-                this.labeledInfoTable.setModel(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
-            } else {
-                // load a random new table
-                Random random = new Random(System.currentTimeMillis());
-                int selectedIndex = random.nextInt(loadedFiles.length);
-
-                currentFile = loadedFiles[selectedIndex];
-
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
-                currentSheet = new Sheet(sheetName, fileName, amount);
-            }
-
-//            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
+            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
 
             System.out.println(currentFile.getName());
 
@@ -214,6 +192,10 @@ public class MainFrame {
                 }
             }
         });
+
+        JPopupMenu lineTypePopupMenu = getLineTypePopupMenu();
+
+        sheetDisplayTable.setComponentPopupMenu(lineTypePopupMenu);
     }
 
     public static void main(String[] args) {
@@ -399,5 +381,89 @@ public class MainFrame {
         final Map<Sheet, Double> newScore = score.entrySet().stream().sorted(Map.Entry.<Sheet, Double>comparingByValue().reversed())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
         return newScore.entrySet().iterator().next().getKey();
+    }
+
+    private JPopupMenu getLineTypePopupMenu() {
+        AtomicInteger startIndex = new AtomicInteger();
+        AtomicInteger endIndex = new AtomicInteger();
+        ListSelectionModel sheetDisplayTableSelectionModel = sheetDisplayTable.getSelectionModel();
+        sheetDisplayTableSelectionModel.addListSelectionListener(e -> {
+            if (!sheetDisplayTableSelectionModel.isSelectionEmpty()) {
+                startIndex.set(sheetDisplayTableSelectionModel.getMinSelectionIndex() + 1);
+                endIndex.set(sheetDisplayTableSelectionModel.getMaxSelectionIndex() + 1);
+            }
+        });
+
+        JPopupMenu lineTypePopupMenu = new JPopupMenu("Line type Popup Menu");
+        JMenuItem lineTypeMenuItem = new JMenuItem("Preamble (P)");
+        lineTypeMenuItem.addActionListener(e -> {
+            System.out.println(e.getActionCommand());
+            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
+        });
+        lineTypePopupMenu.add(lineTypeMenuItem);
+
+        lineTypeMenuItem = new JMenuItem("Header (H)");
+        lineTypeMenuItem.addActionListener(e -> {
+            System.out.println(e.getActionCommand());
+            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
+        });
+        lineTypePopupMenu.add(lineTypeMenuItem);
+
+        lineTypeMenuItem = new JMenuItem("Data (D)");
+        lineTypeMenuItem.addActionListener(e -> {
+            System.out.println(e.getActionCommand());
+            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
+        });
+        lineTypePopupMenu.add(lineTypeMenuItem);
+
+        lineTypeMenuItem = new JMenuItem("Aggregation (A)");
+        lineTypeMenuItem.addActionListener(e -> {
+            System.out.println(e.getActionCommand());
+            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
+        });
+        lineTypePopupMenu.add(lineTypeMenuItem);
+
+        lineTypeMenuItem = new JMenuItem("Footnote (F)");
+        lineTypeMenuItem.addActionListener(e -> {
+            System.out.println(e.getActionCommand());
+            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
+        });
+        lineTypePopupMenu.add(lineTypeMenuItem);
+
+        lineTypeMenuItem = new JMenuItem("Group header (G)");
+        lineTypeMenuItem.addActionListener(e -> {
+            System.out.println(e.getActionCommand());
+            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
+        });
+        lineTypePopupMenu.add(lineTypeMenuItem);
+        return lineTypePopupMenu;
+    }
+
+    private void addToLabelInfoTable() {
+        if (startLine.getText().equals("") || endLine.getText().equals("")) {
+            JOptionPane.showMessageDialog(null, "Start Line or End Line cannot be empty.");
+        } else if (!startLine.getText().matches("\\d+") || !endLine.getText().matches("\\d+")) {
+            JOptionPane.showMessageDialog(null, "Start line or End Line value is not valid integer.");
+        } else if (Integer.parseInt(startLine.getText()) > Integer.parseInt(endLine.getText())) {
+            JOptionPane.showMessageDialog(null, "The start line index cannot be larger than the end line index.");
+        } else if (lineTypeComboBox.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(null, "Please select a line function type");
+        } else {
+            DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
+            String[] row = new String[tableModel.getColumnCount()];
+            row[0] = startLine.getText();
+            row[1] = endLine.getText();
+            row[2] = Objects.requireNonNull(lineTypeComboBox.getSelectedItem()).toString();
+            tableModel.addRow(row);
+        }
+    }
+
+    private void addToLabelInfo(int startIndex, int endIndex, String type) {
+        DefaultTableModel tableModel = (DefaultTableModel) this.labeledInfoTable.getModel();
+        String[] row = new String[tableModel.getColumnCount()];
+        row[0] = String.valueOf(startIndex);
+        row[1] = String.valueOf(endIndex);
+        row[2] = type;
+        tableModel.addRow(row);
     }
 }
