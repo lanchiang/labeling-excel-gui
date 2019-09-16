@@ -8,8 +8,11 @@ import de.hpi.isg.features.SheetAmountFeature;
 import de.hpi.isg.features.SheetNameSimilarityFeature;
 import de.hpi.isg.features.SheetSimilarityFeature;
 import de.hpi.isg.io.SheetSimilarityCalculator;
-import de.hpi.isg.swing.LineTypeBackgroundColorTableRowRenderer;
+import de.hpi.isg.swing.LabelInfoLineTypeRowRenderer;
+import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 import de.hpi.isg.swing.RowNumberTable;
+import de.hpi.isg.swing.SheetDisplayTableModel;
+import de.hpi.isg.utils.ColorSolution;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -75,11 +78,20 @@ public class MainFrame {
         });
         deleteButton.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mouseReleased(MouseEvent e) {
                 DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
-                tableModel.removeRow(labeledInfoTable.getSelectedRow());
+                Vector row = (Vector) tableModel.getDataVector().elementAt(labeledInfoTable.getSelectedRow());
+                int startIndex = Integer.parseInt(String.valueOf(row.elementAt(0)));
+                int endIndex = Integer.parseInt(String.valueOf(row.elementAt(1)));
 
+                tableModel.removeRow(labeledInfoTable.getSelectedRow());
                 labeledInfoTable.getSelectionModel().clearSelection();
+
+                // todo: when an entry is removed from the labeled info table, the corresponding lines' background color
+                //  in the sheet display table should also be painted white.
+                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+                sheetDisplayTableModel.setRowsBackgroundColor(startIndex, endIndex, ColorSolution.DEFAULT_BACKGROUND_COLOR);
+                sheetDisplayTableModel.fireTableDataChanged();
             }
         });
         submitAndNextFileButton.addActionListener(e -> {
@@ -186,7 +198,7 @@ public class MainFrame {
             if (!sheetDisplayTableSelectionModel.isSelectionEmpty()) {
                 int startIndex = sheetDisplayTableSelectionModel.getMinSelectionIndex() + 1;
                 int endIndex = sheetDisplayTableSelectionModel.getMaxSelectionIndex() + 1;
-                if (endIndex - startIndex > 0) {
+                if (endIndex - startIndex >= 0) {
                     this.endLine.setText(String.valueOf(endIndex));
                     this.startLine.setText(String.valueOf(startIndex));
                 }
@@ -331,25 +343,15 @@ public class MainFrame {
         this.numOfLines.setText(String.valueOf(dataEntries.size()));
         this.numOfColumns.setText(String.valueOf(dataEntries.get(0).length));
 
-        DefaultTableModel tableModel = new DefaultTableModel(0, dataEntries.get(0).length) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        SheetDisplayTableModel tableModel = new SheetDisplayTableModel(0, dataEntries.get(0).length);
 
-        List<Integer> emptyRowIndices = new LinkedList<>();
-        for (int i = 0; i < dataEntries.size(); i++) {
-            tableModel.addRow(dataEntries.get(i));
-            if (Arrays.stream(dataEntries.get(i)).allMatch(""::equals)) {
-                emptyRowIndices.add(i);
-            }
-        }
+        tableModel.insertRows(dataEntries);
+
         sheetDisplayTable.setModel(tableModel);
 
         sheetDisplayTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        sheetDisplayTable.setDefaultRenderer(Object.class, new LineTypeBackgroundColorTableRowRenderer(emptyRowIndices));
+        sheetDisplayTable.setDefaultRenderer(Object.class, new SheetDisplayLineTypeRowRenderer());
 
         for (int i = 0; i < dataEntries.get(0).length; i++) {
             TableColumn column = sheetDisplayTable.getColumnModel().getColumn(i);
@@ -398,6 +400,8 @@ public class MainFrame {
         JMenuItem lineTypeMenuItem = new JMenuItem("Preamble (P)");
         lineTypeMenuItem.addActionListener(e -> {
             System.out.println(e.getActionCommand());
+            SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+            tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.PREAMBLE_BACKGROUND_COLOR);
             addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
@@ -405,6 +409,8 @@ public class MainFrame {
         lineTypeMenuItem = new JMenuItem("Header (H)");
         lineTypeMenuItem.addActionListener(e -> {
             System.out.println(e.getActionCommand());
+            SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+            tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.HEADER_BACKGROUND_COLOR);
             addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
@@ -412,6 +418,8 @@ public class MainFrame {
         lineTypeMenuItem = new JMenuItem("Data (D)");
         lineTypeMenuItem.addActionListener(e -> {
             System.out.println(e.getActionCommand());
+            SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+            tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.DATA_BACKGROUND_COLOR);
             addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
@@ -419,6 +427,8 @@ public class MainFrame {
         lineTypeMenuItem = new JMenuItem("Aggregation (A)");
         lineTypeMenuItem.addActionListener(e -> {
             System.out.println(e.getActionCommand());
+            SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+            tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.AGGREGATION_BACKGROUND_COLOR);
             addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
@@ -426,6 +436,8 @@ public class MainFrame {
         lineTypeMenuItem = new JMenuItem("Footnote (F)");
         lineTypeMenuItem.addActionListener(e -> {
             System.out.println(e.getActionCommand());
+            SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+            tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.FOOTNOTE_BACKGROUND_COLOR);
             addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
@@ -433,6 +445,8 @@ public class MainFrame {
         lineTypeMenuItem = new JMenuItem("Group header (G)");
         lineTypeMenuItem.addActionListener(e -> {
             System.out.println(e.getActionCommand());
+            SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+            tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.GROUND_HEADER_BACKGROUND_COLOR);
             addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
@@ -449,20 +463,15 @@ public class MainFrame {
         } else if (lineTypeComboBox.getSelectedIndex() == 0) {
             JOptionPane.showMessageDialog(null, "Please select a line function type");
         } else {
-            DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
-            String[] row = new String[tableModel.getColumnCount()];
-            row[0] = startLine.getText();
-            row[1] = endLine.getText();
-            row[2] = Objects.requireNonNull(lineTypeComboBox.getSelectedItem()).toString();
-            tableModel.addRow(row);
+            addToLabelInfo(startLine.getText(), endLine.getText(), Objects.requireNonNull(lineTypeComboBox.getSelectedItem()).toString());
         }
     }
 
-    private void addToLabelInfo(int startIndex, int endIndex, String type) {
+    private void addToLabelInfo(Object startIndex, Object endIndex, String type) {
         DefaultTableModel tableModel = (DefaultTableModel) this.labeledInfoTable.getModel();
         String[] row = new String[tableModel.getColumnCount()];
-        row[0] = String.valueOf(startIndex);
-        row[1] = String.valueOf(endIndex);
+        row[0] = startIndex.toString();
+        row[1] = endIndex.toString();
         row[2] = type;
         tableModel.addRow(row);
     }
