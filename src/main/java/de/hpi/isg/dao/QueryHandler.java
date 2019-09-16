@@ -24,8 +24,8 @@ public class QueryHandler implements AbstractQueries {
     private final DatabaseConnector databaseConnector;
 
     public QueryHandler() {
-//        this.databaseConnector = new DatabaseConnector();
-        this.databaseConnector = null;
+        this.databaseConnector = new DatabaseConnector();
+//        this.databaseConnector = null;
     }
 
     @Override
@@ -61,9 +61,9 @@ public class QueryHandler implements AbstractQueries {
     }
 
     @Override
-    public int getDataFileIdByDataFileNameAndSpreadsheetName(String dataFileName, String spreadSheetName) {
+    public int getSpreadsheetIdByDataFileNameAndSpreadsheetName(String dataFileName, String spreadSheetName, Connection connection) {
         String query = String.format("select id from spreadsheet where excel_file_name = \'%s\' and spread_sheet_name = \'%s\'", dataFileName, spreadSheetName);
-        return getId(query, null);
+        return getId(query, connection);
     }
 
     @Override
@@ -118,12 +118,6 @@ public class QueryHandler implements AbstractQueries {
                 int spreadSheetAmount = entry.getValue().size();
                 executeUpdate(String.format("insert into excel_file (excel_file_name, spreadsheet_number) values (\'%s\', %d)",
                         excelFileName, spreadSheetAmount), connection);
-//                try {
-//                    statement.addBatch(String.format("insert into excel_file (excel_file_name, spreadsheet_number) values (\'%s\', %d)",
-//                            excelFileName, spreadSheetAmount));
-//                } catch (SQLException e) {
-//                    e.printStackTrace();
-//                }
 
                 final int excel_file_id = getExcelFileIdByName(excelFileName, connection);
 //                System.out.println(excel_file_id);
@@ -131,11 +125,6 @@ public class QueryHandler implements AbstractQueries {
                 for (String spreadSheetName : entry.getValue()) {
                     String query = String.format("insert into spreadsheet (excel_file_id, spread_sheet_name) values (%d, \'%s\')", excel_file_id, spreadSheetName.replace("'", "''"));
                     executeUpdate(query, connection);
-//                    try {
-//                        statement.addBatch(query);
-//                    } catch (SQLException e) {
-//                        e.printStackTrace();
-//                    }
                 }
             }
 //            connection.commit();
@@ -228,6 +217,19 @@ public class QueryHandler implements AbstractQueries {
             e.printStackTrace();
         }
         return sheetAmount;
+    }
+
+    @Override
+    public void insertTimeCost(AnnotationResults results, long duration) {
+        Connection connection = databaseConnector.getConnection();
+
+        String sheetName = results.getSheet().getSheetName();
+        String excelFileName = results.getSheet().getFileName();
+
+        int spreadsheetId = getSpreadsheetIdByName(sheetName, excelFileName, connection);
+
+        String query = String.format("insert into annotation_time_cost (spreadsheet_id, time_cost) values (%d, %d)", spreadsheetId, duration);
+        executeUpdate(query, connection);
     }
 
     private void executeUpdate(String query, Connection connection) {

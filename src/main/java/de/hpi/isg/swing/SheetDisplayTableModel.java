@@ -23,7 +23,7 @@ public class SheetDisplayTableModel extends DefaultTableModel {
         super(rowCount, columnCount);
     }
 
-    public void setRowBackgroundColor(int rowIndex, Color color) {
+    private void setRowBackgroundColor(int rowIndex, Color color) {
         rowColors.set(rowIndex, color);
     }
 
@@ -31,6 +31,7 @@ public class SheetDisplayTableModel extends DefaultTableModel {
         for (int i = startRowIndex - 1; i < endRowIndex; i++) {
             setRowBackgroundColor(i, color);
         }
+        fireTableDataChanged();
     }
 
     public Color getRowColor(int rowIndex) {
@@ -41,7 +42,6 @@ public class SheetDisplayTableModel extends DefaultTableModel {
     public void insertRow(int row, Object[] rowData) {
         super.insertRow(row, rowData);
         rowColors.add(ColorSolution.DEFAULT_BACKGROUND_COLOR);
-
         if (Arrays.stream(rowData).map(Object::toString).allMatch(""::equals)) {
             emptyLineIndices.add(row);
         }
@@ -52,6 +52,15 @@ public class SheetDisplayTableModel extends DefaultTableModel {
             this.insertRow(i, dataEntries.get(i));
         }
         emptyLineIndices.forEach(rowIndex -> rowColors.set(rowIndex, ColorSolution.EMPTY_LINE_BACKGROUND_COLOR));
+    }
+
+    public void setEmptyRowBackground(int startRowIndex, int endRowIndex) {
+        emptyLineIndices.forEach(rowIndex -> {
+            if (startRowIndex <= (rowIndex + 1) && endRowIndex >= (rowIndex + 1)) {
+                rowColors.set(rowIndex, ColorSolution.EMPTY_LINE_BACKGROUND_COLOR);
+            }
+        });
+        fireTableDataChanged();
     }
 
     @Override

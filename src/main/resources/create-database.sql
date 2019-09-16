@@ -26,6 +26,18 @@ CREATE TABLE IF NOT EXISTS spreadsheet
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+DROP TABLE IF EXISTS annotation_time_cost CASCADE;
+
+CREATE TABLE IF NOT EXISTS annotation_time_cost
+(
+    id  serial PRIMARY KEY,
+    spreadsheet_id  int NOT NULL,
+    time_cost   int    NOT NULL,
+    CONSTRAINT annotation_time_cost_spreadsheet_id_fk FOREIGN KEY (spreadsheet_id)
+        REFERENCES spreadsheet (id) MATCH SIMPLE
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
 DROP TABLE IF EXISTS line_function CASCADE;
 
 CREATE TABLE IF NOT EXISTS line_function
@@ -39,19 +51,3 @@ CREATE TABLE IF NOT EXISTS line_function
         REFERENCES spreadsheet (id) MATCH SIMPLE
         ON UPDATE CASCADE ON DELETE CASCADE
 );
-
--- DROP TABLE IF EXISTS spreadsheet_similarity CASCADE;
---
--- CREATE TABLE IF NOT EXISTS spreadsheet_similarity
--- (
---     id  serial  PRIMARY KEY,
---     spreadsheet_id_1    int NOT NULL,
---     spreadsheet_id_2    int NOT NULL,
---     similarity  float   NOT NULL,
---     CONSTRAINT spreadsheet_id_1_fk FOREIGN KEY (spreadsheet_id_1)
---         REFERENCES spreadsheet (id) MATCH SIMPLE
---         ON UPDATE CASCADE ON DELETE CASCADE,
---     CONSTRAINT spreadsheet_id_2_fk FOREIGN KEY (spreadsheet_id_2)
---         REFERENCES spreadsheet (id) MATCH SIMPLE
---         ON UPDATE CASCADE ON DELETE CASCADE
--- );

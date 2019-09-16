@@ -17,7 +17,7 @@ public interface AbstractQueries {
 
     void insertLineFunctionAnnotationResults(AnnotationResults results);
 
-    int getDataFileIdByDataFileNameAndSpreadsheetName(String dataFileName, String spreadSheetName);
+    int getSpreadsheetIdByDataFileNameAndSpreadsheetName(String dataFileName, String spreadSheetName, Connection connection);
 
     Sheet getMostSimilarSheet(int spreadsheet_id);
 
@@ -34,4 +34,6 @@ public interface AbstractQueries {
     Sheet getSheetById(int id);
 
     int getSheetAmountByExcelName(String excelName);
+
+    void insertTimeCost(AnnotationResults results, long duration);
 }

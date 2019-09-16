@@ -71,7 +71,7 @@ public class AnnotationResults {
                     innerType = LineType.FOOTNOTE;
                     break;
                 }
-                case "Group Header (G)": {
+                case "Group header (G)": {
                     innerType = LineType.GROUP_HEADER;
                     break;
                 }
