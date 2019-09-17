@@ -20,8 +20,12 @@ public class AnnotationResults {
     @Getter
     private final List<AnnotationResult> annotationResults = new LinkedList<>();
 
-    public AnnotationResults(final String fileName, final String sheetName) {
-        this.sheet = new Sheet(sheetName, fileName);
+    @Getter
+    private final long timeExpense;
+
+    public AnnotationResults(final String excelFileName, final String spreadsheetName, final long timeExpense) {
+        this.sheet = new Sheet(spreadsheetName, excelFileName);
+        this.timeExpense = timeExpense;
     }
 
     public void addAnnotation(final int startLineNumber,

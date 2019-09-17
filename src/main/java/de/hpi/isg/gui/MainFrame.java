@@ -9,11 +9,12 @@ import de.hpi.isg.features.SheetAmountFeature;
 import de.hpi.isg.features.SheetNameSimilarityFeature;
 import de.hpi.isg.features.SheetSimilarityFeature;
 import de.hpi.isg.io.SheetSimilarityCalculator;
-import de.hpi.isg.swing.LabelInfoLineTypeRowRenderer;
 import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 import de.hpi.isg.swing.RowNumberTable;
 import de.hpi.isg.swing.SheetDisplayTableModel;
 import de.hpi.isg.utils.ColorSolution;
+import de.hpi.isg.utils.LabelCollideDealStrategy;
+import lombok.Getter;
 import org.apache.commons.lang3.Validate;
 
 import javax.swing.*;
@@ -70,6 +71,9 @@ public class MainFrame {
 
     private long endTime;
 
+    private final static LabelCollideDealStrategy LABEL_COLLIDE_DEAL_STRATEGY = LabelCollideDealStrategy.OVERWRITE;
+
+    @Getter
     private QueryHandler queryHandler = new QueryHandler();
 
     public MainFrame() {
@@ -105,61 +109,59 @@ public class MainFrame {
                 duration = endTime - startTime;
             }
             startTime = endTime;
-            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
-            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                DefaultTableModel labeledInfoTableModel = (DefaultTableModel) labeledInfoTable.getModel();
-                int columnCount = labeledInfoTableModel.getColumnCount();
-                Validate.isTrue(columnCount == 3);
+//            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
+//            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
+//                DefaultTableModel labeledInfoTableModel = (DefaultTableModel) labeledInfoTable.getModel();
+//                int columnCount = labeledInfoTableModel.getColumnCount();
+//                Validate.isTrue(columnCount == 3);
+//
+//                // check whether the label info table is empty.
+//                if (labeledInfoTableModel.getRowCount() == 0) {
+//                    JOptionPane.showMessageDialog(null, "Please enter some labels for this data file.");
+//                    return;
+//                }
+//
+//                String[] nameSplits = currentFile.getName().split("@");
+//                String fileName = nameSplits[0];
+//                String sheetName = nameSplits[1].split(".csv")[0];
+//
+//                AnnotationResults results = new AnnotationResults(fileName, sheetName, duration);
+//                Vector dataVector = labeledInfoTableModel.getDataVector();
+//                for (int i = 0; i < labeledInfoTableModel.getRowCount(); i++) {
+//                    Vector row = (Vector) dataVector.elementAt(i);
+//                    int startLineNumber = Integer.parseInt(row.elementAt(0).toString());
+//                    int endLineNumber = Integer.parseInt(row.elementAt(1).toString());
+//                    String lineType = String.valueOf(row.elementAt(2));
+//                    results.addAnnotation(startLineNumber, endLineNumber, lineType);
+//                }
+//
+//                this.queryHandler.insertLineFunctionAnnotationResults(results);
+//                this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
+//                this.queryHandler.insertTimeCost(results, duration);
+//
+//                // get the most similar file
+//                List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
+//                Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
+//                currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
+//                currentSheet = mostSimilarSheet;
+//
+//                this.labeledInfoTable.setModel(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
+//            } else {
+//                // load a random new table
+//                Random random = new Random(System.currentTimeMillis());
+//                int selectedIndex = random.nextInt(loadedFiles.length);
+//
+//                currentFile = loadedFiles[selectedIndex];
+//
+//                String[] nameSplits = currentFile.getName().split("@");
+//                String fileName = nameSplits[0];
+//                String sheetName = nameSplits[1].split(".csv")[0];
+//
+//                int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
+//                currentSheet = new Sheet(sheetName, fileName, amount);
+//            }
 
-                // check whether the label info table is empty.
-                if (labeledInfoTableModel.getRowCount() == 0) {
-                    JOptionPane.showMessageDialog(null, "Please enter some labels for this data file.");
-                    return;
-                }
-
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                AnnotationResults results = new AnnotationResults(fileName, sheetName);
-                Vector dataVector = labeledInfoTableModel.getDataVector();
-                for (int i = 0; i < labeledInfoTableModel.getRowCount(); i++) {
-                    Vector row = (Vector) dataVector.elementAt(i);
-                    int startLineNumber = Integer.parseInt(row.elementAt(0).toString());
-                    int endLineNumber = Integer.parseInt(row.elementAt(1).toString());
-                    String lineType = String.valueOf(row.elementAt(2));
-                    results.addAnnotation(startLineNumber, endLineNumber, lineType);
-                }
-
-                this.queryHandler.insertLineFunctionAnnotationResults(results);
-
-                this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
-
-                this.queryHandler.insertTimeCost(results, duration);
-
-                // get the most similar file
-                List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
-                Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
-                currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
-                currentSheet = mostSimilarSheet;
-
-                this.labeledInfoTable.setModel(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
-            } else {
-                // load a random new table
-                Random random = new Random(System.currentTimeMillis());
-                int selectedIndex = random.nextInt(loadedFiles.length);
-
-                currentFile = loadedFiles[selectedIndex];
-
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
-                currentSheet = new Sheet(sheetName, fileName, amount);
-            }
-
-//            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
+            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
 
             System.out.println(currentFile.getName());
 
@@ -225,6 +227,54 @@ public class MainFrame {
         JPopupMenu lineTypePopupMenu = getLineTypePopupMenu();
 
         sheetDisplayTable.setComponentPopupMenu(lineTypePopupMenu);
+
+        sheetDisplayTable.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                int startLineNumber = Integer.parseInt(startLine.getText());
+                int endLineNumber = Integer.parseInt(endLine.getText());
+
+                char pressedKeyChar = e.getKeyChar();
+                SheetDisplayTableModel tableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+                Color selectedColor;
+                String lineType = null;
+                switch (pressedKeyChar) {
+                    case 'P': case 'p': {
+                        selectedColor = ColorSolution.PREAMBLE_BACKGROUND_COLOR;
+                        lineType = "Preamble (P)";
+                        break;
+                    }
+                    case 'H': case 'h': {
+                        selectedColor = ColorSolution.HEADER_BACKGROUND_COLOR;
+                        lineType = "Header (H)";
+                        break;
+                    }
+                    case 'D': case 'd': {
+                        selectedColor = ColorSolution.DATA_BACKGROUND_COLOR;
+                        lineType = "Data (D)";
+                        break;
+                    }
+                    case 'A': case 'a': {
+                        selectedColor = ColorSolution.AGGREGATION_BACKGROUND_COLOR;
+                        lineType = "Aggregation (A)";
+                        break;
+                    }
+                    case 'F': case 'f': {
+                        selectedColor = ColorSolution.FOOTNOTE_BACKGROUND_COLOR;
+                        lineType = "Footnote (F)";
+                        break;
+                    }
+                    case 'G': case 'g': {
+                        selectedColor = ColorSolution.GROUND_HEADER_BACKGROUND_COLOR;
+                        lineType = "Group header (G)";
+                        break;
+                    }
+                    default: return;
+                }
+                tableModel.setRowsBackgroundColor(startLineNumber, endLineNumber, selectedColor);
+                addToLabelInfo(startLineNumber, endLineNumber, lineType);
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -349,8 +399,7 @@ public class MainFrame {
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
         JTable rowTable = new RowNumberTable(sheetDisplayTable);
         sheetDisplayPane.setRowHeaderView(rowTable);
-        sheetDisplayPane.setCorner(JScrollPane.UPPER_LEFT_CORNER,
-                rowTable.getTableHeader());
+//        sheetDisplayPane.setCorner(JScrollPane.UPPER_LEFT_CORNER, rowTable.getTableHeader());
     }
 
     private void loadFile(final File file) throws IOException {
@@ -369,6 +418,8 @@ public class MainFrame {
         sheetDisplayTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         sheetDisplayTable.setDefaultRenderer(Object.class, new SheetDisplayLineTypeRowRenderer());
+
+        sheetDisplayPane.setBorder(BorderFactory.createTitledBorder(file.getName()));
 
         for (int i = 0; i < dataEntries.get(0).length; i++) {
             TableColumn column = sheetDisplayTable.getColumnModel().getColumn(i);
