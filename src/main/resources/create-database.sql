@@ -44,8 +44,7 @@ CREATE TABLE IF NOT EXISTS line_function
 (
     id                serial PRIMARY KEY,
     spreadsheet_id      int     NOT NULL,
-    start_line_number int     NOT NULL,
-    end_line_number   int     NOT NULL,
+    line_number int NOT NULL,
     line_type         text NOT NULL,
     CONSTRAINT data_file_id_fk FOREIGN KEY (spreadsheet_id)
         REFERENCES spreadsheet (id) MATCH SIMPLE

@@ -1,5 +1,6 @@
 package de.hpi.isg.utils;
 
+import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 
 import java.awt.*;
@@ -56,5 +57,27 @@ public class ColorSolution {
             }
         }
         return color;
+    }
+
+    public static AnnotationResults.LineType getLineType(Color color) {
+        AnnotationResults.LineType lineType;
+        if (color.equals(PREAMBLE_BACKGROUND_COLOR)) {
+            lineType = AnnotationResults.LineType.PREAMBLE;
+        } else if (color.equals(HEADER_BACKGROUND_COLOR)) {
+            lineType = AnnotationResults.LineType.HEADER;
+        } else if (color.equals(DATA_BACKGROUND_COLOR)) {
+            lineType = AnnotationResults.LineType.DATA;
+        } else if (color.equals(AGGREGATION_BACKGROUND_COLOR)) {
+            lineType = AnnotationResults.LineType.AGGREGATION;
+        } else if (color.equals(FOOTNOTE_BACKGROUND_COLOR)) {
+            lineType = AnnotationResults.LineType.FOOTNOTE;
+        } else if (color.equals(GROUND_HEADER_BACKGROUND_COLOR)) {
+            lineType = AnnotationResults.LineType.GROUP_HEADER;
+        } else if (color.equals(EMPTY_LINE_BACKGROUND_COLOR)) {
+            lineType = AnnotationResults.LineType.EMPTY;
+        } else {
+            throw new IllegalArgumentException("The input color parameter is not corrected.");
+        }
+        return lineType;
     }
 }

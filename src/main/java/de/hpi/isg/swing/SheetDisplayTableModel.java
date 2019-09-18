@@ -1,5 +1,6 @@
 package de.hpi.isg.swing;
 
+import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.utils.ColorSolution;
 
 import javax.swing.table.DefaultTableModel;
@@ -61,6 +62,10 @@ public class SheetDisplayTableModel extends DefaultTableModel {
             }
         });
         fireTableDataChanged();
+    }
+
+    public boolean hasUnannotatedLines() {
+        return rowColors.stream().anyMatch(color -> color.equals(ColorSolution.DEFAULT_BACKGROUND_COLOR));
     }
 
     @Override

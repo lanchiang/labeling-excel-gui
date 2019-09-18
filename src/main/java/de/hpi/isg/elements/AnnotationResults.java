@@ -1,5 +1,7 @@
 package de.hpi.isg.elements;
 
+import de.hpi.isg.swing.SheetDisplayTableModel;
+import de.hpi.isg.utils.ColorSolution;
 import lombok.Getter;
 
 import java.security.InvalidParameterException;
@@ -28,26 +30,26 @@ public class AnnotationResults {
         this.timeExpense = timeExpense;
     }
 
-    public void addAnnotation(final int startLineNumber,
-                              final int endLineNumber,
-                              String type) {
-        annotationResults.add(new AnnotationResult(startLineNumber, endLineNumber, type));
+    public void annotate(SheetDisplayTableModel tableModel) {
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            if (tableModel.getRowColor(i).equals(ColorSolution.DEFAULT_BACKGROUND_COLOR)) {
+                annotationResults.add(new AnnotationResult(i + 1, ColorSolution.getLineType(ColorSolution.EMPTY_LINE_BACKGROUND_COLOR).toString()));
+            } else {
+                annotationResults.add(new AnnotationResult(i + 1, ColorSolution.getLineType(tableModel.getRowColor(i)).toString()));
+            }
+        }
     }
 
     public static class AnnotationResult {
 
         @Getter
-        private int startLineNumber;
-
-        @Getter
-        private int endLineNumber;
+        private int lineNumber;
 
         @Getter
         private LineType type;
 
-        public AnnotationResult(int startLineNumber, int endLineNumber, String type) {
-            this.startLineNumber = startLineNumber;
-            this.endLineNumber = endLineNumber;
+        public AnnotationResult(int lineNumber, String type) {
+            this.lineNumber = lineNumber;
             this.type = getLineType(type);
         }
 
@@ -55,28 +57,32 @@ public class AnnotationResults {
             // empty lines will be filled automatically.
             LineType innerType;
             switch (type) {
-                case "Preamble (P)": {
+                case "PREAMBLE": {
                     innerType = LineType.PREAMBLE;
                     break;
                 }
-                case "Header (H)": {
+                case "HEADER": {
                     innerType = LineType.HEADER;
                     break;
                 }
-                case "Data (D)": {
+                case "DATA": {
                     innerType = LineType.DATA;
                     break;
                 }
-                case "Aggregation (A)": {
+                case "AGGREGATION": {
                     innerType = LineType.AGGREGATION;
                     break;
                 }
-                case "Footnote (F)": {
+                case "FOOTNOTE": {
                     innerType = LineType.FOOTNOTE;
                     break;
                 }
-                case "Group header (G)": {
+                case "GROUP_HEADER": {
                     innerType = LineType.GROUP_HEADER;
+                    break;
+                }
+                case "EMPTY": {
+                    innerType = LineType.EMPTY;
                     break;
                 }
                 default: {
