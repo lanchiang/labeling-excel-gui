@@ -18,6 +18,7 @@ import lombok.Getter;
 import org.apache.commons.lang3.Validate;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
@@ -49,7 +50,6 @@ public class MainFrame {
     private JPanel submitPanel;
     private JScrollPane sheetDisplayPane;
     private JTable labeledInfoTable;
-    private JButton addButton;
     private JButton loadAllFilesButton;
     private JLabel loadedFileLabel;
     private JLabel loadedFileNumberLabel;
@@ -80,28 +80,28 @@ public class MainFrame {
         $$$setupUI$$$();
         submitAndFinishButton.addActionListener(e -> {
         });
-        addButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                addToLabelInfoTable();
-            }
-        });
-        deleteButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
-                Vector row = (Vector) tableModel.getDataVector().elementAt(labeledInfoTable.getSelectedRow());
-                int startIndex = Integer.parseInt(String.valueOf(row.elementAt(0)));
-                int endIndex = Integer.parseInt(String.valueOf(row.elementAt(1)));
-
-                tableModel.removeRow(labeledInfoTable.getSelectedRow());
-                labeledInfoTable.getSelectionModel().clearSelection();
-
-                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
-                sheetDisplayTableModel.setRowsBackgroundColor(startIndex, endIndex, ColorSolution.DEFAULT_BACKGROUND_COLOR);
-                sheetDisplayTableModel.setEmptyRowBackground(startIndex, endIndex);
-            }
-        });
+//        addButton.addMouseListener(new MouseAdapter() {
+//            @Override
+//            public void mouseClicked(MouseEvent e) {
+//                addToLabelInfoTable();
+//            }
+//        });
+//        deleteButton.addMouseListener(new MouseAdapter() {
+//            @Override
+//            public void mouseReleased(MouseEvent e) {
+//                DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
+//                Vector row = (Vector) tableModel.getDataVector().elementAt(labeledInfoTable.getSelectedRow());
+//                int startIndex = Integer.parseInt(String.valueOf(row.elementAt(0)));
+//                int endIndex = Integer.parseInt(String.valueOf(row.elementAt(1)));
+//
+//                tableModel.removeRow(labeledInfoTable.getSelectedRow());
+//                labeledInfoTable.getSelectionModel().clearSelection();
+//
+//                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+//                sheetDisplayTableModel.setRowsBackgroundColor(startIndex, endIndex, ColorSolution.DEFAULT_BACKGROUND_COLOR);
+//                sheetDisplayTableModel.setEmptyRowBackground(startIndex, endIndex);
+//            }
+//        });
         submitAndNextFileButton.addActionListener(e -> {
             endTime = System.currentTimeMillis();
             long duration = 0L;
@@ -239,41 +239,63 @@ public class MainFrame {
                 Color selectedColor;
                 String lineType = null;
                 switch (pressedKeyChar) {
-                    case 'P': case 'p': {
+                    case 'P':
+                    case 'p': {
                         selectedColor = ColorSolution.PREAMBLE_BACKGROUND_COLOR;
                         lineType = "Preamble (P)";
                         break;
                     }
-                    case 'H': case 'h': {
+                    case 'H':
+                    case 'h': {
                         selectedColor = ColorSolution.HEADER_BACKGROUND_COLOR;
                         lineType = "Header (H)";
                         break;
                     }
-                    case 'D': case 'd': {
+                    case 'D':
+                    case 'd': {
                         selectedColor = ColorSolution.DATA_BACKGROUND_COLOR;
                         lineType = "Data (D)";
                         break;
                     }
-                    case 'A': case 'a': {
+                    case 'A':
+                    case 'a': {
                         selectedColor = ColorSolution.AGGREGATION_BACKGROUND_COLOR;
                         lineType = "Aggregation (A)";
                         break;
                     }
-                    case 'F': case 'f': {
+                    case 'F':
+                    case 'f': {
                         selectedColor = ColorSolution.FOOTNOTE_BACKGROUND_COLOR;
                         lineType = "Footnote (F)";
                         break;
                     }
-                    case 'G': case 'g': {
+                    case 'G':
+                    case 'g': {
                         selectedColor = ColorSolution.GROUND_HEADER_BACKGROUND_COLOR;
                         lineType = "Group header (G)";
                         break;
                     }
-                    default: return;
+                    default:
+                        return;
                 }
                 tableModel.setRowsBackgroundColor(startLineNumber, endLineNumber, selectedColor);
                 addToLabelInfo(startLineNumber, endLineNumber, lineType);
             }
+        });
+
+        lineTypeComboBox.addActionListener(e -> {
+            int index = lineTypeComboBox.getSelectedIndex();
+            if (index == 0)
+                return;
+            if (startLine.getText() == null || endLine.getText() == null)
+                return;
+            int startLineIndex = Integer.parseInt(startLine.getText());
+            int endLineIndex = Integer.parseInt(endLine.getText());
+
+            String selectedLineType = lineTypeComboBox.getSelectedItem().toString();
+
+            SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+            sheetDisplayTableModel.setRowsBackgroundColor(startLineIndex, endLineIndex, ColorSolution.getColor(selectedLineType));
         });
     }
 
@@ -304,24 +326,27 @@ public class MainFrame {
         mainPagePanel.add(sheetDisplayPane, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
         sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
         numOfColumnsLabel = new JPanel();
-        numOfColumnsLabel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 5, new Insets(0, 0, 0, 0), -1, -1));
+        numOfColumnsLabel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 4, new Insets(0, 0, 0, 0), -1, -1));
         mainPagePanel.add(numOfColumnsLabel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(909, 130), null, 0, false));
         labelOperatingPanel = new JPanel();
-        labelOperatingPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 4, new Insets(0, 0, 0, 0), -1, -1));
+        labelOperatingPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 6, new Insets(0, 0, 0, 0), -1, -1));
         numOfColumnsLabel.add(labelOperatingPanel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(311, 56), null, 1, false));
+        labelOperatingPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "Block selection", TitledBorder.LEFT, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, -1, -1, labelOperatingPanel.getFont()), new Color(-16777216)));
         startLineLabel = new JLabel();
         startLineLabel.setText("Start Line");
         labelOperatingPanel.add(startLineLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         endLineLabel = new JLabel();
         endLineLabel.setText("End Line");
-        labelOperatingPanel.add(endLineLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        labelOperatingPanel.add(endLineLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         lineTypeLabel = new JLabel();
         lineTypeLabel.setText("Line Function Type");
         lineTypeLabel.setVerticalAlignment(0);
         lineTypeLabel.setVerticalTextPosition(0);
-        labelOperatingPanel.add(lineTypeLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(151, 16), null, 1, false));
+        labelOperatingPanel.add(lineTypeLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(151, 16), null, 1, false));
+        startLine = new JTextField();
+        labelOperatingPanel.add(startLine, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, -1), new Dimension(50, -1), new Dimension(50, -1), 2, false));
         endLine = new JTextField();
-        labelOperatingPanel.add(endLine, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 2, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, -1), new Dimension(50, -1), new Dimension(50, -1), 2, false));
+        labelOperatingPanel.add(endLine, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, -1), new Dimension(50, -1), new Dimension(50, -1), 2, false));
         lineTypeComboBox = new JComboBox();
         lineTypeComboBox.setEditable(false);
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
@@ -333,20 +358,7 @@ public class MainFrame {
         defaultComboBoxModel1.addElement("Footnote (F)");
         defaultComboBoxModel1.addElement("Group Header (G)");
         lineTypeComboBox.setModel(defaultComboBoxModel1);
-        labelOperatingPanel.add(lineTypeComboBox, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 2, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(80, -1), new Dimension(151, 27), new Dimension(160, -1), 2, false));
-        startLine = new JTextField();
-        labelOperatingPanel.add(startLine, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 2, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, -1), new Dimension(50, -1), new Dimension(50, -1), 2, false));
-        addButton = new JButton();
-        addButton.setText("Add");
-        labelOperatingPanel.add(addButton, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        deleteButton = new JButton();
-        deleteButton.setEnabled(false);
-        deleteButton.setText("Delete");
-        labelOperatingPanel.add(deleteButton, new com.intellij.uiDesigner.core.GridConstraints(2, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JScrollPane scrollPane1 = new JScrollPane();
-        numOfColumnsLabel.add(scrollPane1, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 3, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        scrollPane1.setBorder(BorderFactory.createTitledBorder("Labeled Lines"));
-        scrollPane1.setViewportView(labeledInfoTable);
+        labelOperatingPanel.add(lineTypeComboBox, new com.intellij.uiDesigner.core.GridConstraints(0, 5, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(80, -1), new Dimension(151, 27), new Dimension(160, -1), 2, false));
         submitPanel = new JPanel();
         submitPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         numOfColumnsLabel.add(submitPanel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(311, 31), null, 2, false));
@@ -382,6 +394,25 @@ public class MainFrame {
         numOfColumns = new JLabel();
         numOfColumns.setText("");
         numOfColumnsLabel.add(numOfColumns, new com.intellij.uiDesigner.core.GridConstraints(3, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font $$$getFont$$$(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) return null;
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(), size >= 0 ? size : currentFont.getSize());
     }
 
     /**
@@ -547,3 +578,26 @@ public class MainFrame {
         sheetDisplayTableModel.setRowsBackgroundColor(Integer.parseInt(startIndex.toString()), Integer.parseInt(endIndex.toString()), ColorSolution.getColor(type));
     }
 }
+
+//        addButton.addMouseListener(new MouseAdapter() {
+//            @Override
+//            public void mouseClicked(MouseEvent e) {
+//                addToLabelInfoTable();
+//            }
+//        });
+//        deleteButton.addMouseListener(new MouseAdapter() {
+//            @Override
+//            public void mouseReleased(MouseEvent e) {
+//                DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
+//                Vector row = (Vector) tableModel.getDataVector().elementAt(labeledInfoTable.getSelectedRow());
+//                int startIndex = Integer.parseInt(String.valueOf(row.elementAt(0)));
+//                int endIndex = Integer.parseInt(String.valueOf(row.elementAt(1)));
+//
+//                tableModel.removeRow(labeledInfoTable.getSelectedRow());
+//                labeledInfoTable.getSelectionModel().clearSelection();
+//
+//                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+//                sheetDisplayTableModel.setRowsBackgroundColor(startIndex, endIndex, ColorSolution.DEFAULT_BACKGROUND_COLOR);
+//                sheetDisplayTableModel.setEmptyRowBackground(startIndex, endIndex);
+//            }
+//        });
