@@ -114,7 +114,7 @@ public class SheetSimilarityCalculator {
     }
 
     public File getMostSimilarFile(Sheet sheet) {
-        return new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/" + sheet.getFileName() + "@" + sheet.getSheetName() + ".csv");
+        return new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/" + sheet.getExcelFileName() + "@" + sheet.getSheetName() + ".csv");
     }
 
     public static void main(String[] args) {

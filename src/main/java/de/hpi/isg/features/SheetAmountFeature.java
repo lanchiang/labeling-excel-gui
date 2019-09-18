@@ -25,8 +25,8 @@ public class SheetAmountFeature extends SheetSimilarityFeature {
 
     @Override
     public double score(File file1, File file2, Map<String, Sheet> sheets) {
-        String fileName1 = sheets.get(file1.getName()).getFileName();
-        String fileName2 = sheets.get(file2.getName()).getFileName();
+        String fileName1 = sheets.get(file1.getName()).getExcelFileName();
+        String fileName2 = sheets.get(file2.getName()).getExcelFileName();
         int sheetAmount1 = sheetNamesByFileName.get(fileName1).size();
         int sheetAmount2 = sheetNamesByFileName.get(fileName2).size();
 

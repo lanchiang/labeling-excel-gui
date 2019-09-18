@@ -28,12 +28,20 @@ public class QueryHandler implements AbstractQueries {
 //        this.databaseConnector = null;
     }
 
+    public void close() {
+        try {
+            this.databaseConnector.getConnection().close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void insertLineFunctionAnnotationResults(AnnotationResults annotationResults) {
         Connection connection = databaseConnector.getConnection();
 
         Sheet sheet = annotationResults.getSheet();
-        String fileName = sheet.getFileName().replace("'", "''");
+        String fileName = sheet.getExcelFileName().replace("'", "''");
         String spreadSheetName = sheet.getSheetName();
 
         final int spreadsheet_id = getSpreadsheetIdByName(spreadSheetName, fileName, connection);
@@ -47,6 +55,12 @@ public class QueryHandler implements AbstractQueries {
                     spreadsheet_id, lineNumber, lineType.toString()), databaseConnector.getConnection());
         }
 //        System.out.println("Records created successfully");
+
+//        try {
+//            connection.close();
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override
@@ -99,7 +113,7 @@ public class QueryHandler implements AbstractQueries {
     @Override
     public void loadExcelFileStatistics(Map<String, List<String>> sheetNamesByExcelFileName) {
         Connection connection;
-        try {
+//        try {
             connection = databaseConnector.getConnection();
 
             for (Map.Entry<String, List<String>> entry : sheetNamesByExcelFileName.entrySet()) {
@@ -116,12 +130,11 @@ public class QueryHandler implements AbstractQueries {
                     executeUpdate(query, connection);
                 }
             }
-//            connection.commit();
 
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+//            connection.close();
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override
@@ -132,11 +145,11 @@ public class QueryHandler implements AbstractQueries {
         String query = String.format("update spreadsheet set has_annotated = TRUE where id = %d", spreadsheet_id);
         executeUpdate(query, connection);
 
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            connection.close();
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override
@@ -213,7 +226,7 @@ public class QueryHandler implements AbstractQueries {
         Connection connection = databaseConnector.getConnection();
 
         String sheetName = results.getSheet().getSheetName();
-        String excelFileName = results.getSheet().getFileName();
+        String excelFileName = results.getSheet().getExcelFileName();
 
         int spreadsheetId = getSpreadsheetIdByName(sheetName, excelFileName, connection);
 

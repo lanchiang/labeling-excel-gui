@@ -18,8 +18,8 @@ public class FileNameSimilarityFeature extends SheetSimilarityFeature {
 
     @Override
     public double score(File file1, File file2, Map<String, Sheet> sheets) {
-        String fileName1 = sheets.get(file1.getName()).getFileName();
-        String fileName2 = sheets.get(file2.getName()).getFileName();
+        String fileName1 = sheets.get(file1.getName()).getExcelFileName();
+        String fileName2 = sheets.get(file2.getName()).getExcelFileName();
         return levenshtein.similarity(fileName1, fileName2);
     }
 
@@ -27,8 +27,8 @@ public class FileNameSimilarityFeature extends SheetSimilarityFeature {
     public void score(Sheet current, List<Sheet> candidateSheets) {
         scoreMap = new HashMap<>();
         candidateSheets.forEach(sheet -> {
-            String currentExcelName = current.getFileName();
-            String excelName = sheet.getFileName();
+            String currentExcelName = current.getExcelFileName();
+            String excelName = sheet.getExcelFileName();
             scoreMap.putIfAbsent(sheet, levenshtein.similarity(currentExcelName, excelName));
         });
     }

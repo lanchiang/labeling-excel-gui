@@ -14,7 +14,7 @@ public class Sheet {
     private final String sheetName;
 
     @Getter
-    private final String fileName;
+    private final String excelFileName;
 
     /**
      * Number of spreadsheets in the excel file that contains this spreadsheet.
@@ -22,13 +22,13 @@ public class Sheet {
     @Getter
     private final int numOfSpreadsheetsOfExcelFile;
 
-    public Sheet(String sheetName, String fileName) {
-        this(sheetName, fileName, 0);
+    public Sheet(String sheetName, String excelFileName) {
+        this(sheetName, excelFileName, 0);
     }
 
-    public Sheet(String sheetName, String fileName, int numOfSpreadsheetsOfExcelFile) {
+    public Sheet(String sheetName, String excelFileName, int numOfSpreadsheetsOfExcelFile) {
         this.sheetName = sheetName;
-        this.fileName = fileName;
+        this.excelFileName = excelFileName;
         this.numOfSpreadsheetsOfExcelFile = numOfSpreadsheetsOfExcelFile;
     }
 }

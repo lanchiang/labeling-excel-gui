@@ -23,7 +23,6 @@ public class DatabaseConnector {
 
     public DatabaseConnector() {
         runCreateDatabaseScript();
-        // Todo: change the configuration
         try {
             Class.forName("org.postgresql.Driver");
             this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/line_function_db",
@@ -35,13 +34,23 @@ public class DatabaseConnector {
     }
 
     public Connection getConnection() {
-        try {
-            Class.forName("org.postgresql.Driver");
-            this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/line_function_db",
-                    "Fuga", null);
-            this.connection.setAutoCommit(false);
-        } catch (ClassNotFoundException | SQLException e) {
-            throw new RuntimeException(e);
+//        try {
+//            Class.forName("org.postgresql.Driver");
+//            this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/line_function_db",
+//                    "Fuga", null);
+//            this.connection.setAutoCommit(false);
+//        } catch (ClassNotFoundException | SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+        if (connection == null) {
+            try {
+                Class.forName("org.postgresql.Driver");
+                this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/line_function_db",
+                        "Fuga", null);
+                this.connection.setAutoCommit(false);
+            } catch (ClassNotFoundException | SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
         return connection;
     }

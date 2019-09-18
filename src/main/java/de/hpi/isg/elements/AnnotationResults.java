@@ -54,7 +54,6 @@ public class AnnotationResults {
         }
 
         private LineType getLineType(String type) {
-            // empty lines will be filled automatically.
             LineType innerType;
             switch (type) {
                 case "PREAMBLE": {

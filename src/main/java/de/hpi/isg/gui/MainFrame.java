@@ -8,14 +8,15 @@ import de.hpi.isg.features.FileNameSimilarityFeature;
 import de.hpi.isg.features.SheetAmountFeature;
 import de.hpi.isg.features.SheetNameSimilarityFeature;
 import de.hpi.isg.features.SheetSimilarityFeature;
+import de.hpi.isg.io.ResultCache;
 import de.hpi.isg.io.SheetSimilarityCalculator;
+import de.hpi.isg.json.JsonWriter;
+import de.hpi.isg.pojo.SpreadSheetPojo;
 import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 import de.hpi.isg.swing.RowNumberTable;
 import de.hpi.isg.swing.SheetDisplayTableModel;
 import de.hpi.isg.utils.ColorSolution;
-import de.hpi.isg.utils.LabelCollideDealStrategy;
 import lombok.Getter;
-import org.apache.commons.lang3.Validate;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -48,11 +49,9 @@ public class MainFrame {
     private JLabel lineTypeLabel;
     private JPanel submitPanel;
     private JScrollPane sheetDisplayPane;
-    private JTable labeledInfoTable;
     private JButton loadAllFilesButton;
     private JLabel loadedFileLabel;
     private JLabel loadedFileNumberLabel;
-    private JButton deleteButton;
     private JLabel numOfLines;
     private JLabel numOfLinesLabel;
     private JLabel numOfColumns;
@@ -72,7 +71,7 @@ public class MainFrame {
 
     private long endTime;
 
-    private final static LabelCollideDealStrategy LABEL_COLLIDE_DEAL_STRATEGY = LabelCollideDealStrategy.OVERWRITE;
+    private ResultCache<SpreadSheetPojo> resultCache = new ResultCache<>();
 
     @Getter
     private QueryHandler queryHandler = new QueryHandler();
@@ -80,42 +79,19 @@ public class MainFrame {
     public MainFrame() {
         $$$setupUI$$$();
         submitAndFinishButton.addActionListener(e -> {
-        });
-//        addButton.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseClicked(MouseEvent e) {
-//                addToLabelInfoTable();
-//            }
-//        });
-//        deleteButton.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseReleased(MouseEvent e) {
-//                DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
-//                Vector row = (Vector) tableModel.getDataVector().elementAt(labeledInfoTable.getSelectedRow());
-//                int startIndex = Integer.parseInt(String.valueOf(row.elementAt(0)));
-//                int endIndex = Integer.parseInt(String.valueOf(row.elementAt(1)));
-//
-//                tableModel.removeRow(labeledInfoTable.getSelectedRow());
-//                labeledInfoTable.getSelectionModel().clearSelection();
-//
-//                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
-//                sheetDisplayTableModel.setRowsBackgroundColor(startIndex, endIndex, ColorSolution.DEFAULT_BACKGROUND_COLOR);
-//                sheetDisplayTableModel.setEmptyRowBackground(startIndex, endIndex);
-//            }
-//        });
-        submitAndNextFileButton.addActionListener(e -> {
             endTime = System.currentTimeMillis();
             long duration = 0L;
             if (startTime != 0L) {
                 duration = endTime - startTime;
             }
-            startTime = endTime;
+
+            // write the results into a json file.
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
                 SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) tableModel;
                 if (sheetDisplayTableModel.hasUnannotatedLines()) {
                     int selectCode = JOptionPane.showConfirmDialog(null,
-                            "Some lines are not annotated yet. Do you want to proceed? Click on \"OK\" will automatically annotate this lines as empty lines");
+                            "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
                     if (selectCode != JOptionPane.OK_OPTION) {
                         return;
                     }
@@ -129,6 +105,46 @@ public class MainFrame {
 
                 results.annotate(sheetDisplayTableModel);
 
+                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
+
+                this.queryHandler.insertLineFunctionAnnotationResults(results);
+                this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
+                this.queryHandler.insertTimeCost(results, duration);
+
+                JsonWriter<SpreadSheetPojo> writer = new JsonWriter<>();
+                writer.write(resultCache);
+
+                this.queryHandler.close();
+            }
+        });
+        submitAndNextFileButton.addActionListener(e -> {
+            endTime = System.currentTimeMillis();
+            long duration = 0L;
+            if (startTime != 0L) {
+                duration = endTime - startTime;
+            }
+            startTime = endTime;
+            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
+            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
+                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) tableModel;
+                if (sheetDisplayTableModel.hasUnannotatedLines()) {
+                    int selectCode = JOptionPane.showConfirmDialog(null,
+                            "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
+                    if (selectCode != JOptionPane.OK_OPTION) {
+                        return;
+                    }
+                }
+
+                String[] nameSplits = currentFile.getName().split("@");
+                String fileName = nameSplits[0];
+                String sheetName = nameSplits[1].split(".csv")[0];
+
+                AnnotationResults results = new AnnotationResults(fileName, sheetName, duration);
+
+                results.annotate(sheetDisplayTableModel);
+
+                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
+
                 this.queryHandler.insertLineFunctionAnnotationResults(results);
                 this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
                 this.queryHandler.insertTimeCost(results, duration);
@@ -138,8 +154,6 @@ public class MainFrame {
                 Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
                 currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
                 currentSheet = mostSimilarSheet;
-
-                this.labeledInfoTable.setModel(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
             } else {
                 // load a random new table
                 Random random = new Random(System.currentTimeMillis());
@@ -185,25 +199,6 @@ public class MainFrame {
 
                 submitAndNextFileButton.setEnabled(true);
                 submitAndFinishButton.setEnabled(true);
-            }
-        });
-        submitAndFinishButton.addActionListener(e -> {
-            endTime = System.currentTimeMillis();
-            long duration;
-            if (startTime != 0L) {
-                duration = endTime - startTime;
-            }
-            // write the results into a json file.
-        });
-        labeledInfoTable.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                deleteButton.setEnabled(true);
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                deleteButton.setEnabled(false);
             }
         });
         ListSelectionModel sheetDisplayTableSelectionModel = sheetDisplayTable.getSelectionModel();
@@ -422,9 +417,6 @@ public class MainFrame {
     }
 
     private void createUIComponents() {
-        labeledInfoTable = new JTable(new DefaultTableModel(new String[]{"Start Line", "End Line", "Line Type"}, 0));
-        labeledInfoTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         sheetDisplayTable = new JTable();
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
         JTable rowTable = new RowNumberTable(sheetDisplayTable);
@@ -566,12 +558,12 @@ public class MainFrame {
     }
 
     private void addToLabelInfo(Object startIndex, Object endIndex, String type) {
-        DefaultTableModel tableModel = (DefaultTableModel) this.labeledInfoTable.getModel();
-        String[] row = new String[tableModel.getColumnCount()];
-        row[0] = startIndex.toString();
-        row[1] = endIndex.toString();
-        row[2] = type;
-        tableModel.addRow(row);
+//        DefaultTableModel tableModel = (DefaultTableModel) this.labeledInfoTable.getModel();
+//        String[] row = new String[tableModel.getColumnCount()];
+//        row[0] = startIndex.toString();
+//        row[1] = endIndex.toString();
+//        row[2] = type;
+//        tableModel.addRow(row);
 
         SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
         sheetDisplayTableModel.setRowsBackgroundColor(Integer.parseInt(startIndex.toString()), Integer.parseInt(endIndex.toString()), ColorSolution.getColor(type));
