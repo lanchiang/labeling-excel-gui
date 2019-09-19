@@ -8,14 +8,17 @@ import de.hpi.isg.features.FileNameSimilarityFeature;
 import de.hpi.isg.features.SheetAmountFeature;
 import de.hpi.isg.features.SheetNameSimilarityFeature;
 import de.hpi.isg.features.SheetSimilarityFeature;
-import de.hpi.isg.io.ResultCache;
 import de.hpi.isg.io.SheetSimilarityCalculator;
 import de.hpi.isg.json.JsonWriter;
 import de.hpi.isg.pojo.SpreadSheetPojo;
+import de.hpi.isg.storage.RDMBSStore;
+import de.hpi.isg.storage.Store;
+import de.hpi.isg.storage.JsonStore;
 import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 import de.hpi.isg.swing.RowNumberTable;
 import de.hpi.isg.swing.SheetDisplayTableModel;
 import de.hpi.isg.utils.ColorSolution;
+import de.hpi.isg.utils.LineTypeUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -39,7 +42,7 @@ public class MainFrame {
     private JPanel mainPagePanel;
     private JTextField startLine;
     private JTextField endLine;
-    private JComboBox lineTypeComboBox;
+    private JComboBox<String> lineTypeComboBox;
     private JButton submitAndNextFileButton;
     private JButton submitAndFinishButton;
     private JTable sheetDisplayTable;
@@ -58,6 +61,7 @@ public class MainFrame {
     private JPanel numOfColumnsLabel;
     private JPanel sheetStatPanel;
     private JPanel loadFilePanel;
+    private JTabbedPane menuTab;
 
     private File[] loadedFiles;
 
@@ -71,7 +75,7 @@ public class MainFrame {
 
     private long endTime;
 
-    private ResultCache<SpreadSheetPojo> resultCache = new ResultCache<>();
+    private Store store;
 
     @Getter
     private QueryHandler queryHandler = new QueryHandler();
@@ -105,14 +109,10 @@ public class MainFrame {
 
                 results.annotate(sheetDisplayTableModel);
 
-                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
-
-                this.queryHandler.insertLineFunctionAnnotationResults(results);
-                this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
-                this.queryHandler.insertTimeCost(results, duration);
+                this.store.addAnnotation(results);
 
                 JsonWriter<SpreadSheetPojo> writer = new JsonWriter<>();
-                writer.write(resultCache);
+                writer.write(((JsonStore) store).getResultCache());
 
                 this.queryHandler.close();
             }
@@ -124,52 +124,51 @@ public class MainFrame {
                 duration = endTime - startTime;
             }
             startTime = endTime;
-            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
-            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) tableModel;
-                if (sheetDisplayTableModel.hasUnannotatedLines()) {
-                    int selectCode = JOptionPane.showConfirmDialog(null,
-                            "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
-                    if (selectCode != JOptionPane.OK_OPTION) {
-                        return;
-                    }
-                }
+//            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
+//            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
+//                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) tableModel;
+//                if (sheetDisplayTableModel.hasUnannotatedLines()) {
+//                    int selectCode = JOptionPane.showConfirmDialog(null,
+//                            "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
+//                    if (selectCode != JOptionPane.OK_OPTION) {
+//                        return;
+//                    }
+//                }
+//
+//                String[] nameSplits = currentFile.getName().split("@");
+//                String fileName = nameSplits[0];
+//                String sheetName = nameSplits[1].split(".csv")[0];
+//
+//                AnnotationResults results = new AnnotationResults(fileName, sheetName, duration);
+//
+//                results.annotate(sheetDisplayTableModel);
+//
+//                this.store.addAnnotation(results);
+//
+////                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
+//
+//                // get the most similar file
+////                Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
+//                List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
+//                Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
+//                currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
+//                currentSheet = mostSimilarSheet;
+//            } else {
+//                // load a random new table
+//                Random random = new Random(System.currentTimeMillis());
+//                int selectedIndex = random.nextInt(loadedFiles.length);
+//
+//                currentFile = loadedFiles[selectedIndex];
+//
+//                String[] nameSplits = currentFile.getName().split("@");
+//                String fileName = nameSplits[0];
+//                String sheetName = nameSplits[1].split(".csv")[0];
+//
+//                int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
+//                currentSheet = new Sheet(sheetName, fileName, amount);
+//            }
 
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                AnnotationResults results = new AnnotationResults(fileName, sheetName, duration);
-
-                results.annotate(sheetDisplayTableModel);
-
-                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
-
-                this.queryHandler.insertLineFunctionAnnotationResults(results);
-                this.queryHandler.updateSpreadsheetAnnotationStatus(sheetName, fileName);
-                this.queryHandler.insertTimeCost(results, duration);
-
-                // get the most similar file
-                List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
-                Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
-                currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
-                currentSheet = mostSimilarSheet;
-            } else {
-                // load a random new table
-                Random random = new Random(System.currentTimeMillis());
-                int selectedIndex = random.nextInt(loadedFiles.length);
-
-                currentFile = loadedFiles[selectedIndex];
-
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
-                currentSheet = new Sheet(sheetName, fileName, amount);
-            }
-
-//            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
+            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
 
             System.out.println(currentFile.getName());
 
@@ -199,6 +198,8 @@ public class MainFrame {
 
                 submitAndNextFileButton.setEnabled(true);
                 submitAndFinishButton.setEnabled(true);
+
+                store = new RDMBSStore(null, this.queryHandler);
             }
         });
         ListSelectionModel sheetDisplayTableSelectionModel = sheetDisplayTable.getSelectionModel();
@@ -210,12 +211,87 @@ public class MainFrame {
                     this.endLine.setText(String.valueOf(endIndex));
                     this.startLine.setText(String.valueOf(startIndex));
                 }
+
+//                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+//                final Color currentColor = sheetDisplayTableModel.getRowColor(sheetDisplayTableSelectionModel.getMinSelectionIndex());
+//                int index = 0;
+//                String lineType = ColorSolution.getLineType(currentColor);
+//                if (lineType == null) {
+//                    lineTypeComboBox.setSelectedIndex(0);
+//                    return;
+//                }
+//                switch (lineType) {
+//                    case LineTypeUtils.PREAMBLE:
+//                        index = 1;
+//                        break;
+//                    case LineTypeUtils.HEADER:
+//                        index = 2;
+//                        break;
+//                    case LineTypeUtils.DATA:
+//                        index = 3;
+//                        break;
+//                    case LineTypeUtils.AGGREGATION:
+//                        index = 4;
+//                        break;
+//                    case LineTypeUtils.FOOTNOTE:
+//                        index = 5;
+//                        break;
+//                    case LineTypeUtils.GROUP_HEADER:
+//                        index = 6;
+//                        break;
+//                }
+//                lineTypeComboBox.setSelectedIndex(index);
             }
         });
 
         JPopupMenu lineTypePopupMenu = getLineTypePopupMenu();
 
         sheetDisplayTable.setComponentPopupMenu(lineTypePopupMenu);
+
+        sheetDisplayTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                ListSelectionModel sheetDisplayTableSelectionModel = sheetDisplayTable.getSelectionModel();
+                if (!sheetDisplayTableSelectionModel.isSelectionEmpty()) {
+                    int startIndex = sheetDisplayTableSelectionModel.getMinSelectionIndex() + 1;
+                    int endIndex = sheetDisplayTableSelectionModel.getMaxSelectionIndex() + 1;
+                    if (endIndex - startIndex >= 0) {
+                        endLine.setText(String.valueOf(endIndex));
+                        startLine.setText(String.valueOf(startIndex));
+                    }
+
+                    SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+                    final Color currentColor = sheetDisplayTableModel.getRowColor(sheetDisplayTableSelectionModel.getMinSelectionIndex());
+                    int index = 0;
+                    String lineType = ColorSolution.getLineType(currentColor);
+                    if (lineType == null) {
+                        lineTypeComboBox.setSelectedIndex(0);
+                        return;
+                    }
+                    switch (lineType) {
+                        case LineTypeUtils.PREAMBLE:
+                            index = 1;
+                            break;
+                        case LineTypeUtils.HEADER:
+                            index = 2;
+                            break;
+                        case LineTypeUtils.DATA:
+                            index = 3;
+                            break;
+                        case LineTypeUtils.AGGREGATION:
+                            index = 4;
+                            break;
+                        case LineTypeUtils.FOOTNOTE:
+                            index = 5;
+                            break;
+                        case LineTypeUtils.GROUP_HEADER:
+                            index = 6;
+                            break;
+                    }
+                    lineTypeComboBox.setSelectedIndex(index);
+                }
+            }
+        });
 
         sheetDisplayTable.addKeyListener(new KeyAdapter() {
             @Override
@@ -229,49 +305,50 @@ public class MainFrame {
                 char pressedKeyChar = e.getKeyChar();
                 SheetDisplayTableModel tableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
                 Color selectedColor;
-                String lineType;
                 switch (pressedKeyChar) {
                     case 'P':
                     case 'p': {
                         selectedColor = ColorSolution.PREAMBLE_BACKGROUND_COLOR;
-                        lineType = "Preamble (P)";
                         break;
                     }
                     case 'H':
                     case 'h': {
                         selectedColor = ColorSolution.HEADER_BACKGROUND_COLOR;
-                        lineType = "Header (H)";
                         break;
                     }
                     case 'D':
                     case 'd': {
                         selectedColor = ColorSolution.DATA_BACKGROUND_COLOR;
-                        lineType = "Data (D)";
                         break;
                     }
                     case 'A':
                     case 'a': {
                         selectedColor = ColorSolution.AGGREGATION_BACKGROUND_COLOR;
-                        lineType = "Aggregation (A)";
                         break;
                     }
                     case 'F':
                     case 'f': {
                         selectedColor = ColorSolution.FOOTNOTE_BACKGROUND_COLOR;
-                        lineType = "Footnote (F)";
                         break;
                     }
                     case 'G':
                     case 'g': {
                         selectedColor = ColorSolution.GROUND_HEADER_BACKGROUND_COLOR;
-                        lineType = "Group header (G)";
+                        break;
+                    }
+                    case 'E':
+                    case 'e': {
+                        selectedColor = ColorSolution.EMPTY_LINE_BACKGROUND_COLOR;
                         break;
                     }
                     default:
                         return;
                 }
                 tableModel.setRowsBackgroundColor(startLineNumber, endLineNumber, selectedColor);
-                addToLabelInfo(startLineNumber, endLineNumber, lineType);
+                if (endLineNumber < tableModel.getRowCount()) {
+                    sheetDisplayTable.requestFocus();
+                    sheetDisplayTable.changeSelection(endLineNumber, 0, false, false);
+                }
             }
         });
 
@@ -311,13 +388,21 @@ public class MainFrame {
     private void $$$setupUI$$$() {
         createUIComponents();
         mainPagePanel = new JPanel();
-        mainPagePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        mainPagePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         mainPagePanel.setBorder(BorderFactory.createTitledBorder(""));
-        mainPagePanel.add(sheetDisplayPane, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
-        sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
+        menuTab = new JTabbedPane();
+        menuTab.setTabLayoutPolicy(1);
+        menuTab.setTabPlacement(1);
+        mainPagePanel.add(menuTab, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        final JPanel panel1 = new JPanel();
+        panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        menuTab.addTab("Instruction", panel1);
+        final JPanel panel2 = new JPanel();
+        panel2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        menuTab.addTab("Line Type Annotation", panel2);
         numOfColumnsLabel = new JPanel();
         numOfColumnsLabel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
-        mainPagePanel.add(numOfColumnsLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(909, 130), null, 0, false));
+        panel2.add(numOfColumnsLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(909, 130), null, 0, false));
         loadFilePanel = new JPanel();
         loadFilePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
         numOfColumnsLabel.add(loadFilePanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -349,7 +434,6 @@ public class MainFrame {
         lineTypeLabel.setVerticalAlignment(0);
         lineTypeLabel.setVerticalTextPosition(0);
         labelOperatingPanel.add(lineTypeLabel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(151, 16), null, 1, false));
-        lineTypeComboBox = new JComboBox();
         lineTypeComboBox.setEditable(false);
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
         defaultComboBoxModel1.addElement("-");
@@ -388,6 +472,11 @@ public class MainFrame {
         submitAndFinishButton.setEnabled(false);
         submitAndFinishButton.setText("Submit and Finish");
         submitPanel.add(submitAndFinishButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel2.add(sheetDisplayPane, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
+        sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        menuTab.addTab("Multitable Annotation", panel3);
     }
 
     /**
@@ -422,6 +511,18 @@ public class MainFrame {
         JTable rowTable = new RowNumberTable(sheetDisplayTable);
         sheetDisplayPane.setRowHeaderView(rowTable);
 //        sheetDisplayPane.setCorner(JScrollPane.UPPER_LEFT_CORNER, rowTable.getTableHeader());
+
+        lineTypeComboBox = new JComboBox<>();
+        lineTypeComboBox.setEditable(false);
+        final DefaultComboBoxModel<String> comboItems = new DefaultComboBoxModel<>();
+        comboItems.addElement("-");
+        comboItems.addElement(LineTypeUtils.PREAMBLE);
+        comboItems.addElement(LineTypeUtils.HEADER);
+        comboItems.addElement(LineTypeUtils.DATA);
+        comboItems.addElement(LineTypeUtils.AGGREGATION);
+        comboItems.addElement(LineTypeUtils.FOOTNOTE);
+        comboItems.addElement(LineTypeUtils.GROUP_HEADER);
+        lineTypeComboBox.setModel(comboItems);
     }
 
     private void loadFile(final File file) throws IOException {
@@ -439,7 +540,11 @@ public class MainFrame {
 
         sheetDisplayTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        sheetDisplayTable.setDefaultRenderer(Object.class, new SheetDisplayLineTypeRowRenderer());
+        sheetDisplayTable.setDefaultRenderer(Object.class, new SheetDisplayLineTypeRowRenderer(dataEntries.size(), dataEntries.get(0).length));
+
+        sheetDisplayTable.setColumnSelectionAllowed(false);
+        sheetDisplayTable.setRowSelectionAllowed(true);
+
 
         sheetDisplayPane.setBorder(BorderFactory.createTitledBorder(file.getName()));
 
@@ -492,7 +597,6 @@ public class MainFrame {
             System.out.println(e.getActionCommand());
             SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
             tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.PREAMBLE_BACKGROUND_COLOR);
-            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
 
@@ -501,7 +605,6 @@ public class MainFrame {
             System.out.println(e.getActionCommand());
             SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
             tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.HEADER_BACKGROUND_COLOR);
-            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
 
@@ -510,7 +613,6 @@ public class MainFrame {
             System.out.println(e.getActionCommand());
             SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
             tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.DATA_BACKGROUND_COLOR);
-            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
 
@@ -519,7 +621,6 @@ public class MainFrame {
             System.out.println(e.getActionCommand());
             SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
             tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.AGGREGATION_BACKGROUND_COLOR);
-            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
 
@@ -528,7 +629,6 @@ public class MainFrame {
             System.out.println(e.getActionCommand());
             SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
             tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.FOOTNOTE_BACKGROUND_COLOR);
-            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
 
@@ -537,58 +637,8 @@ public class MainFrame {
             System.out.println(e.getActionCommand());
             SheetDisplayTableModel tableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
             tableModel.setRowsBackgroundColor(startIndex.get(), endIndex.get(), ColorSolution.GROUND_HEADER_BACKGROUND_COLOR);
-            addToLabelInfo(startIndex.get(), endIndex.get(), e.getActionCommand());
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
         return lineTypePopupMenu;
     }
-
-    private void addToLabelInfoTable() {
-        if (startLine.getText().equals("") || endLine.getText().equals("")) {
-            JOptionPane.showMessageDialog(null, "Start Line or End Line cannot be empty.");
-        } else if (!startLine.getText().matches("\\d+") || !endLine.getText().matches("\\d+")) {
-            JOptionPane.showMessageDialog(null, "Start line or End Line value is not valid integer.");
-        } else if (Integer.parseInt(startLine.getText()) > Integer.parseInt(endLine.getText())) {
-            JOptionPane.showMessageDialog(null, "The start line index cannot be larger than the end line index.");
-        } else if (lineTypeComboBox.getSelectedIndex() == 0) {
-            JOptionPane.showMessageDialog(null, "Please select a line function type");
-        } else {
-            addToLabelInfo(startLine.getText(), endLine.getText(), Objects.requireNonNull(lineTypeComboBox.getSelectedItem()).toString());
-        }
-    }
-
-    private void addToLabelInfo(Object startIndex, Object endIndex, String type) {
-//        DefaultTableModel tableModel = (DefaultTableModel) this.labeledInfoTable.getModel();
-//        String[] row = new String[tableModel.getColumnCount()];
-//        row[0] = startIndex.toString();
-//        row[1] = endIndex.toString();
-//        row[2] = type;
-//        tableModel.addRow(row);
-
-        SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
-        sheetDisplayTableModel.setRowsBackgroundColor(Integer.parseInt(startIndex.toString()), Integer.parseInt(endIndex.toString()), ColorSolution.getColor(type));
-    }
 }
-
-//        addButton.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseClicked(MouseEvent e) {
-//                addToLabelInfoTable();
-//            }
-//        });
-//        deleteButton.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseReleased(MouseEvent e) {
-//                DefaultTableModel tableModel = (DefaultTableModel) labeledInfoTable.getModel();
-//                Vector row = (Vector) tableModel.getDataVector().elementAt(labeledInfoTable.getSelectedRow());
-//                int startIndex = Integer.parseInt(String.valueOf(row.elementAt(0)));
-//                int endIndex = Integer.parseInt(String.valueOf(row.elementAt(1)));
-//
-//                tableModel.removeRow(labeledInfoTable.getSelectedRow());
-//                labeledInfoTable.getSelectionModel().clearSelection();
-//
-//                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
-//                sheetDisplayTableModel.setRowsBackgroundColor(startIndex, endIndex, ColorSolution.DEFAULT_BACKGROUND_COLOR);
-//                sheetDisplayTableModel.setEmptyRowBackground(startIndex, endIndex);
-//            }
-//        });

@@ -16,7 +16,14 @@ public class SheetDisplayLineTypeRowRenderer implements TableCellRenderer {
 
     public static final int OPACITY_PARAMETER = 64;
 
-    public SheetDisplayLineTypeRowRenderer() {}
+    private final int rowCount;
+
+    private final int columnCount;
+
+    public SheetDisplayLineTypeRowRenderer(int rowCount, int columnCount) {
+        this.rowCount = rowCount;
+        this.columnCount = columnCount;
+    }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

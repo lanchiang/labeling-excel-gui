@@ -16,7 +16,8 @@ public class JsonWriter<T> {
 
     public void write(ResultCache<T> resultCache) {
         try {
-            objectMapper.writeValue(new FileOutputStream("./test.json"), resultCache);
+            String outputJsonPath = "./annotation_result.json";
+            objectMapper.writeValue(new FileOutputStream(outputJsonPath), resultCache);
         } catch (IOException e) {
             e.printStackTrace();
         }

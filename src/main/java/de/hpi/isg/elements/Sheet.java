@@ -2,6 +2,8 @@ package de.hpi.isg.elements;
 
 import lombok.Getter;
 
+import java.util.Objects;
+
 /**
  * This entity represents a sheet.
  *
@@ -30,5 +32,20 @@ public class Sheet {
         this.sheetName = sheetName;
         this.excelFileName = excelFileName;
         this.numOfSpreadsheetsOfExcelFile = numOfSpreadsheetsOfExcelFile;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Sheet sheet = (Sheet) o;
+        return numOfSpreadsheetsOfExcelFile == sheet.numOfSpreadsheetsOfExcelFile &&
+                Objects.equals(sheetName, sheet.sheetName) &&
+                Objects.equals(excelFileName, sheet.excelFileName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sheetName, excelFileName, numOfSpreadsheetsOfExcelFile);
     }
 }

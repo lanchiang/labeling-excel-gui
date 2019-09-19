@@ -17,10 +17,6 @@ public interface AbstractQueries {
 
     void insertLineFunctionAnnotationResults(AnnotationResults results);
 
-    int getSpreadsheetIdByDataFileNameAndSpreadsheetName(String dataFileName, String spreadSheetName, Connection connection);
-
-    Sheet getMostSimilarSheet(int spreadsheet_id);
-
     int getExcelFileIdByName(String excelFileName, Connection connection);
 
     int getSpreadsheetIdByName(String spreadsheetName, String excel_file_name, Connection connection);
@@ -30,8 +26,6 @@ public interface AbstractQueries {
     void updateSpreadsheetAnnotationStatus(String spreadsheetName, String excel_file_name);
 
     List<Sheet> getAllUnannotatedSpreadsheet();
-
-    Sheet getSheetById(int id);
 
     int getSheetAmountByExcelName(String excelName);
 

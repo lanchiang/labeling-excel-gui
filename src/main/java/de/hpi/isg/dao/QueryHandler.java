@@ -24,8 +24,8 @@ public class QueryHandler implements AbstractQueries {
     private final DatabaseConnector databaseConnector;
 
     public QueryHandler() {
-        this.databaseConnector = new DatabaseConnector();
-//        this.databaseConnector = null;
+//        this.databaseConnector = new DatabaseConnector();
+        this.databaseConnector = null;
     }
 
     public void close() {
@@ -49,33 +49,12 @@ public class QueryHandler implements AbstractQueries {
         List<AnnotationResults.AnnotationResult> results = annotationResults.getAnnotationResults();
         for (AnnotationResults.AnnotationResult result : results) {
             int lineNumber = result.getLineNumber();
-            AnnotationResults.LineType lineType = result.getType();
+            String lineType = result.getType();
 
             executeUpdate(String.format("insert into line_function (spreadsheet_id, line_number, line_type) values (%d, %d, \'%s\')",
-                    spreadsheet_id, lineNumber, lineType.toString()), databaseConnector.getConnection());
+                    spreadsheet_id, lineNumber, lineType), databaseConnector.getConnection());
         }
 //        System.out.println("Records created successfully");
-
-//        try {
-//            connection.close();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-    }
-
-    @Override
-    public int getSpreadsheetIdByDataFileNameAndSpreadsheetName(String dataFileName, String spreadSheetName, Connection connection) {
-        String query = String.format("select id from spreadsheet where excel_file_name = \'%s\' and spread_sheet_name = \'%s\'", dataFileName, spreadSheetName);
-        return getId(query, connection);
-    }
-
-    @Override
-    public Sheet getMostSimilarSheet(int spreadsheet_id) {
-        String query = String.format("select * from spreadsheet_similarity, spreadsheet " +
-                "where spreadsheet.id = spreadsheet_similarity.spreadsheet_id_1 and spreadsheet_similarity.spreadsheet_id_1 = %d " +
-                "order by similarity descending", spreadsheet_id);
-
-        return null;
     }
 
     @Override
@@ -113,28 +92,22 @@ public class QueryHandler implements AbstractQueries {
     @Override
     public void loadExcelFileStatistics(Map<String, List<String>> sheetNamesByExcelFileName) {
         Connection connection;
-//        try {
-            connection = databaseConnector.getConnection();
+        connection = databaseConnector.getConnection();
 
-            for (Map.Entry<String, List<String>> entry : sheetNamesByExcelFileName.entrySet()) {
-                String excelFileName = entry.getKey().replace("'", "''");
-                int spreadSheetAmount = entry.getValue().size();
-                executeUpdate(String.format("insert into excel_file (excel_file_name, spreadsheet_number) values (\'%s\', %d)",
-                        excelFileName, spreadSheetAmount), connection);
+        for (Map.Entry<String, List<String>> entry : sheetNamesByExcelFileName.entrySet()) {
+            String excelFileName = entry.getKey().replace("'", "''");
+            int spreadSheetAmount = entry.getValue().size();
+            executeUpdate(String.format("insert into excel_file (excel_file_name, spreadsheet_number) values (\'%s\', %d)",
+                    excelFileName, spreadSheetAmount), connection);
 
-                final int excel_file_id = getExcelFileIdByName(excelFileName, connection);
+            final int excel_file_id = getExcelFileIdByName(excelFileName, connection);
 //                System.out.println(excel_file_id);
 
-                for (String spreadSheetName : entry.getValue()) {
-                    String query = String.format("insert into spreadsheet (excel_file_id, spread_sheet_name) values (%d, \'%s\')", excel_file_id, spreadSheetName.replace("'", "''"));
-                    executeUpdate(query, connection);
-                }
+            for (String spreadSheetName : entry.getValue()) {
+                String query = String.format("insert into spreadsheet (excel_file_id, spread_sheet_name) values (%d, \'%s\')", excel_file_id, spreadSheetName.replace("'", "''"));
+                executeUpdate(query, connection);
             }
-
-//            connection.close();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
+        }
     }
 
     @Override
@@ -144,12 +117,6 @@ public class QueryHandler implements AbstractQueries {
         int spreadsheet_id = getSpreadsheetIdByName(spreadsheetName, excel_file_name, connection);
         String query = String.format("update spreadsheet set has_annotated = TRUE where id = %d", spreadsheet_id);
         executeUpdate(query, connection);
-
-//        try {
-//            connection.close();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
     }
 
     @Override
@@ -175,30 +142,6 @@ public class QueryHandler implements AbstractQueries {
             e.printStackTrace();
         }
         return results;
-    }
-
-    @Override
-    public Sheet getSheetById(int id) {
-        Connection connection = databaseConnector.getConnection();
-
-        String query = String.format("select spreadsheet.spread_sheet_name, excel_file.excel_file_name, excel_file.spreadsheet_number from spreadsheet, excel_file " +
-                "where spreadsheet.excel_file_id = excel_file.id and spreadsheet.id = %d", id);
-        try {
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query);
-
-            Sheet sheet = null;
-            if (resultSet.next()) {
-                String sheetName = resultSet.getString("spread_sheet_name");
-                String excelName = resultSet.getString("excel_file_name");
-                int sheetAmount = resultSet.getInt("spreadsheet_number");
-                sheet = new Sheet(sheetName, excelName, sheetAmount);
-            }
-            return sheet;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     @Override
