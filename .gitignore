@@ -14,3 +14,6 @@ buildNumber.properties
 # idea
 .idea/
 *.iml
+
+# output files
+annotation_result.json

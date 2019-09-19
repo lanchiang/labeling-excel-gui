@@ -62,6 +62,8 @@ public class MainFrame {
     private JPanel sheetStatPanel;
     private JPanel loadFilePanel;
     private JTabbedPane menuTab;
+    private JButton copyPatternButton;
+    private JButton pastePatternButton;
 
     private File[] loadedFiles;
 
@@ -76,6 +78,8 @@ public class MainFrame {
     private long endTime;
 
     private Store store;
+
+    private Color[] colorPattern;
 
     @Getter
     private QueryHandler queryHandler = new QueryHandler();
@@ -260,35 +264,36 @@ public class MainFrame {
                         startLine.setText(String.valueOf(startIndex));
                     }
 
-                    SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
-                    final Color currentColor = sheetDisplayTableModel.getRowColor(sheetDisplayTableSelectionModel.getMinSelectionIndex());
-                    int index = 0;
-                    String lineType = ColorSolution.getLineType(currentColor);
-                    if (lineType == null) {
-                        lineTypeComboBox.setSelectedIndex(0);
-                        return;
-                    }
-                    switch (lineType) {
-                        case LineTypeUtils.PREAMBLE:
-                            index = 1;
-                            break;
-                        case LineTypeUtils.HEADER:
-                            index = 2;
-                            break;
-                        case LineTypeUtils.DATA:
-                            index = 3;
-                            break;
-                        case LineTypeUtils.AGGREGATION:
-                            index = 4;
-                            break;
-                        case LineTypeUtils.FOOTNOTE:
-                            index = 5;
-                            break;
-                        case LineTypeUtils.GROUP_HEADER:
-                            index = 6;
-                            break;
-                    }
-                    lineTypeComboBox.setSelectedIndex(index);
+//                    SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+//                    final Color currentColor = sheetDisplayTableModel.getRowColor(sheetDisplayTableSelectionModel.getMinSelectionIndex());
+//                    int index = 0;
+//                    String lineType = ColorSolution.getLineType(currentColor);
+//                    if (lineType == null) {
+//                        lineTypeComboBox.setSelectedIndex(0);
+//                        return;
+//                    }
+//                    switch (lineType) {
+//                        case LineTypeUtils.PREAMBLE:
+//                            index = 1;
+//                            break;
+//                        case LineTypeUtils.HEADER:
+//                            index = 2;
+//                            break;
+//                        case LineTypeUtils.DATA:
+//                            index = 3;
+//                            break;
+//                        case LineTypeUtils.AGGREGATION:
+//                            index = 4;
+//                            break;
+//                        case LineTypeUtils.FOOTNOTE:
+//                            index = 5;
+//                            break;
+//                        case LineTypeUtils.GROUP_HEADER:
+//                            index = 6;
+//                            break;
+//                    }
+//                    lineTypeComboBox.setSelectedIndex(index);
+//                    sheetDisplayTable.requestFocus();
                 }
             }
         });
@@ -367,6 +372,39 @@ public class MainFrame {
             sheetDisplayTableModel.setRowsBackgroundColor(startLineIndex, endLineIndex, ColorSolution.getColor(selectedLineType));
             lineTypeComboBox.setSelectedIndex(0);
         });
+        copyPatternButton.addActionListener(e -> {
+            int startLineIndex = sheetDisplayTableSelectionModel.getMinSelectionIndex();
+            int endLineIndex = sheetDisplayTableSelectionModel.getMaxSelectionIndex();
+
+            colorPattern = new Color[endLineIndex - startLineIndex + 1];
+            SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+            for (int i = startLineIndex, j = 0; i <= endLineIndex; i++, j++) {
+                colorPattern[j] = sheetDisplayTableModel.getRowColor(i);
+            }
+            System.out.println("Color pattern is copied");
+            this.pastePatternButton.setEnabled(true);
+        });
+        pastePatternButton.addActionListener(e -> {
+            if (colorPattern == null) {
+                return;
+            }
+            int startLineIndex = sheetDisplayTableSelectionModel.getMinSelectionIndex() + 1;
+
+            SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+
+            for (int i = 0; i < colorPattern.length; i++) {
+                if (startLineIndex + i <= sheetDisplayTableModel.getRowCount()) {
+                    sheetDisplayTableModel.setRowsBackgroundColor(startLineIndex + i, startLineIndex + i, colorPattern[i]);
+                }
+            }
+            sheetDisplayTableModel.fireTableDataChanged();
+
+            int endLineIndex = (startLineIndex - 1) + colorPattern.length;
+            if (endLineIndex < sheetDisplayTableModel.getRowCount()) {
+                sheetDisplayTable.requestFocus();
+                sheetDisplayTable.changeSelection(endLineIndex, 0, false, false);
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -401,11 +439,11 @@ public class MainFrame {
         panel2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         menuTab.addTab("Line Type Annotation", panel2);
         numOfColumnsLabel = new JPanel();
-        numOfColumnsLabel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
+        numOfColumnsLabel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 6, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(numOfColumnsLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(909, 130), null, 0, false));
         loadFilePanel = new JPanel();
         loadFilePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
-        numOfColumnsLabel.add(loadFilePanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        numOfColumnsLabel.add(loadFilePanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 2, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         loadAllFilesButton = new JButton();
         loadAllFilesButton.setText("Load All files");
         loadFilePanel.add(loadAllFilesButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -463,7 +501,7 @@ public class MainFrame {
         sheetStatPanel.add(numOfLines, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         submitPanel = new JPanel();
         submitPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        numOfColumnsLabel.add(submitPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(311, 31), null, 2, false));
+        numOfColumnsLabel.add(submitPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 5, 2, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(311, 31), null, 2, false));
         submitAndNextFileButton = new JButton();
         submitAndNextFileButton.setEnabled(true);
         submitAndNextFileButton.setText("Submit and Next File");
@@ -472,6 +510,14 @@ public class MainFrame {
         submitAndFinishButton.setEnabled(false);
         submitAndFinishButton.setText("Submit and Finish");
         submitPanel.add(submitAndFinishButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        copyPatternButton = new JButton();
+        copyPatternButton.setEnabled(false);
+        copyPatternButton.setText("Copy pattern");
+        numOfColumnsLabel.add(copyPatternButton, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        pastePatternButton = new JButton();
+        pastePatternButton.setEnabled(false);
+        pastePatternButton.setText("Paste pattern");
+        numOfColumnsLabel.add(pastePatternButton, new com.intellij.uiDesigner.core.GridConstraints(1, 4, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panel2.add(sheetDisplayPane, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
         sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
         final JPanel panel3 = new JPanel();
@@ -545,8 +591,9 @@ public class MainFrame {
         sheetDisplayTable.setColumnSelectionAllowed(false);
         sheetDisplayTable.setRowSelectionAllowed(true);
 
-
         sheetDisplayPane.setBorder(BorderFactory.createTitledBorder(file.getName()));
+
+        this.copyPatternButton.setEnabled(true);
 
         for (int i = 0; i < dataEntries.get(0).length; i++) {
             TableColumn column = sheetDisplayTable.getColumnModel().getColumn(i);
