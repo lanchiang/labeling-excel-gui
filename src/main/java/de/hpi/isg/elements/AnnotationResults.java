@@ -24,9 +24,19 @@ public class AnnotationResults {
     @Getter
     private final long timeExpense;
 
+    @Getter
+    private final boolean isMultitableFile;
+
     public AnnotationResults(final String excelFileName, final String spreadsheetName, final long timeExpense) {
         this.sheet = new Sheet(spreadsheetName, excelFileName);
         this.timeExpense = timeExpense;
+        this.isMultitableFile = false;
+    }
+
+    public AnnotationResults(final String excelFileName, final String spreadsheetName, final long timeExpense, boolean isMultitableFile) {
+        this.sheet = new Sheet(spreadsheetName, excelFileName);
+        this.timeExpense = timeExpense;
+        this.isMultitableFile = isMultitableFile;
     }
 
     public void annotate(SheetDisplayTableModel tableModel) {

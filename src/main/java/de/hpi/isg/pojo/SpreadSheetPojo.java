@@ -14,25 +14,38 @@ public class SpreadSheetPojo {
 
     @JsonProperty("spreadsheet_name")
     @Getter
-    private String spreadsheetName;
+    private final String spreadsheetName;
 
     @JsonProperty("excel_file_name")
     @Getter
-    private String excelFileName;
+    private final String excelFileName;
 
     @JsonProperty("time_expense")
     @Getter
-    private long timeExpense;
+    private final long timeExpense;
+
+    @JsonProperty("is_multitable_tile")
+    @Getter
+    private final boolean isMultitableFile;
 
     @JsonProperty("annotations")
     @JacksonXmlElementWrapper(useWrapping = false)
     @Getter
-    private Collection<AnnotationPojo> annotationPojos;
+    private final Collection<AnnotationPojo> annotationPojos;
 
     public SpreadSheetPojo(String spreadsheetName, String excelFileName, long timeExpense, Collection<AnnotationPojo> annotationPojos) {
         this.spreadsheetName = spreadsheetName;
         this.excelFileName = excelFileName;
         this.timeExpense = timeExpense;
+        this.isMultitableFile = false;
+        this.annotationPojos = annotationPojos;
+    }
+
+    public SpreadSheetPojo(String spreadsheetName, String excelFileName, long timeExpense, boolean isMultitableFile, Collection<AnnotationPojo> annotationPojos) {
+        this.spreadsheetName = spreadsheetName;
+        this.excelFileName = excelFileName;
+        this.timeExpense = timeExpense;
+        this.isMultitableFile = isMultitableFile;
         this.annotationPojos = annotationPojos;
     }
 }

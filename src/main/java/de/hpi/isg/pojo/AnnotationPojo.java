@@ -11,15 +11,15 @@ public class AnnotationPojo {
 
     @JsonProperty("start_line_number")
     @Getter
-    private int startLineNumber;
+    private final int startLineNumber;
 
     @JsonProperty("end_line_number")
     @Getter
-    private int endLineNumber;
+    private final int endLineNumber;
 
     @JsonProperty("line_type")
     @Getter
-    private String lineType;
+    private final String lineType;
 
     public AnnotationPojo(int startLineNumber, int endLineNumber, String lineType) {
         this.startLineNumber = startLineNumber;

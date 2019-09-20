@@ -1,7 +1,7 @@
 package de.hpi.isg.gui;
 
 import com.opencsv.CSVReader;
-import de.hpi.isg.dao.QueryHandler;
+import de.hpi.isg.dao.DatabaseQueryHandler;
 import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.elements.Sheet;
 import de.hpi.isg.features.FileNameSimilarityFeature;
@@ -18,7 +18,6 @@ import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 import de.hpi.isg.swing.RowNumberTable;
 import de.hpi.isg.swing.SheetDisplayTableModel;
 import de.hpi.isg.utils.ColorSolution;
-import de.hpi.isg.utils.LineTypeUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -40,9 +39,9 @@ import java.util.stream.Collectors;
 public class MainFrame {
 
     private JPanel mainPagePanel;
-    private JTextField startLine;
-    private JTextField endLine;
-    private JComboBox<String> lineTypeComboBox;
+    private JLabel startLine;
+    private JLabel endLine;
+    private JLabel lineTypeDisplay;
     private JButton submitAndNextFileButton;
     private JButton submitAndFinishButton;
     private JTable sheetDisplayTable;
@@ -66,6 +65,14 @@ public class MainFrame {
     private JButton pastePatternButton;
     private JPanel loadFilePanel;
     private JProgressBar annotationProgress;
+    private JLabel preambleColorLabel;
+    private JLabel headerColorLabel;
+    private JLabel dataColorLabel;
+    private JLabel aggregationColorLabel;
+    private JLabel footnoteColorLabel;
+    private JLabel groupHeaderColorLabel;
+    private JLabel emptyColorLabel;
+    private JButton submitAsMultitableFileButton;
 
     private int annotatedFileAmount = 0;
 
@@ -86,7 +93,7 @@ public class MainFrame {
     private Color[] colorPattern;
 
     @Getter
-    private QueryHandler queryHandler = new QueryHandler();
+    private DatabaseQueryHandler queryHandler = new DatabaseQueryHandler();
 
     public MainFrame() {
         $$$setupUI$$$();
@@ -127,69 +134,19 @@ public class MainFrame {
         });
         submitAndNextFileButton.addActionListener(e -> {
             endTime = System.currentTimeMillis();
-            long duration = 0L;
-            if (startTime != 0L) {
-                duration = endTime - startTime;
-            }
-            startTime = endTime;
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) tableModel;
-                if (sheetDisplayTableModel.hasUnannotatedLines()) {
-                    int selectCode = JOptionPane.showConfirmDialog(null,
-                            "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
-                    if (selectCode != JOptionPane.OK_OPTION) {
-                        return;
-                    }
-                }
-
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                AnnotationResults results = new AnnotationResults(fileName, sheetName, duration);
-
-                results.annotate(sheetDisplayTableModel);
-
-                this.store.addAnnotation(results);
-
-//                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
-
-                // get the most similar file
-//                Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
-                List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
-                Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
-                currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
-                currentSheet = mostSimilarSheet;
-
-                annotatedFileAmount++;
-                this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
+                submitResult();
+                loadNextFile();
             } else {
-                // load a random new table
-                Random random = new Random(System.currentTimeMillis());
-                int selectedIndex = random.nextInt(loadedFiles.length);
-
-                currentFile = loadedFiles[selectedIndex];
-
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
-                currentSheet = new Sheet(sheetName, fileName, amount);
+                throw new RuntimeException("There is no sheet being displayed.");
             }
 
 //            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
 
-            this.annotationProgress.setValue(annotatedFileAmount);
-
             System.out.println(currentFile.getName());
 
-            try {
-                loadFile(currentFile);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            startTime = System.currentTimeMillis();
         });
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
@@ -210,13 +167,15 @@ public class MainFrame {
 
                 this.queryHandler.loadExcelFileStatistics(calculator.getSheetNamesByFileName());
 
-                this.annotationProgress.setMinimum(0);
-                this.annotationProgress.setMaximum(loadedFiles.length);
-
                 submitAndNextFileButton.setEnabled(true);
                 submitAndFinishButton.setEnabled(true);
 
                 store = new RDMBSStore(null, this.queryHandler);
+
+                this.submitAndNextFileButton.setEnabled(true);
+
+                loadNextFile();
+                startTime = System.currentTimeMillis();
             }
         });
         ListSelectionModel sheetDisplayTableSelectionModel = sheetDisplayTable.getSelectionModel();
@@ -224,40 +183,17 @@ public class MainFrame {
             if (!sheetDisplayTableSelectionModel.isSelectionEmpty()) {
                 int startIndex = sheetDisplayTableSelectionModel.getMinSelectionIndex() + 1;
                 int endIndex = sheetDisplayTableSelectionModel.getMaxSelectionIndex() + 1;
-                if (endIndex - startIndex >= 0) {
-                    this.endLine.setText(String.valueOf(endIndex));
-                    this.startLine.setText(String.valueOf(startIndex));
-                }
+                this.endLine.setText(String.valueOf(endIndex));
+                this.startLine.setText(String.valueOf(startIndex));
 
-//                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
-//                final Color currentColor = sheetDisplayTableModel.getRowColor(sheetDisplayTableSelectionModel.getMinSelectionIndex());
-//                int index = 0;
-//                String lineType = ColorSolution.getLineType(currentColor);
-//                if (lineType == null) {
-//                    lineTypeComboBox.setSelectedIndex(0);
-//                    return;
-//                }
-//                switch (lineType) {
-//                    case LineTypeUtils.PREAMBLE:
-//                        index = 1;
-//                        break;
-//                    case LineTypeUtils.HEADER:
-//                        index = 2;
-//                        break;
-//                    case LineTypeUtils.DATA:
-//                        index = 3;
-//                        break;
-//                    case LineTypeUtils.AGGREGATION:
-//                        index = 4;
-//                        break;
-//                    case LineTypeUtils.FOOTNOTE:
-//                        index = 5;
-//                        break;
-//                    case LineTypeUtils.GROUP_HEADER:
-//                        index = 6;
-//                        break;
-//                }
-//                lineTypeComboBox.setSelectedIndex(index);
+                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+                final Color currentColor = sheetDisplayTableModel.getRowColor(sheetDisplayTableSelectionModel.getMinSelectionIndex());
+                String lineType = ColorSolution.getLineType(currentColor);
+                if (lineType != null) {
+                    lineTypeDisplay.setText(lineType);
+                } else {
+                    lineTypeDisplay.setText("n/a");
+                }
             }
         });
 
@@ -272,41 +208,17 @@ public class MainFrame {
                 if (!sheetDisplayTableSelectionModel.isSelectionEmpty()) {
                     int startIndex = sheetDisplayTableSelectionModel.getMinSelectionIndex() + 1;
                     int endIndex = sheetDisplayTableSelectionModel.getMaxSelectionIndex() + 1;
-                    if (endIndex - startIndex >= 0) {
-                        endLine.setText(String.valueOf(endIndex));
-                        startLine.setText(String.valueOf(startIndex));
-                    }
+                    endLine.setText(String.valueOf(endIndex));
+                    startLine.setText(String.valueOf(startIndex));
 
-//                    SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
-//                    final Color currentColor = sheetDisplayTableModel.getRowColor(sheetDisplayTableSelectionModel.getMinSelectionIndex());
-//                    int index = 0;
-//                    String lineType = ColorSolution.getLineType(currentColor);
-//                    if (lineType == null) {
-//                        lineTypeComboBox.setSelectedIndex(0);
-//                        return;
-//                    }
-//                    switch (lineType) {
-//                        case LineTypeUtils.PREAMBLE:
-//                            index = 1;
-//                            break;
-//                        case LineTypeUtils.HEADER:
-//                            index = 2;
-//                            break;
-//                        case LineTypeUtils.DATA:
-//                            index = 3;
-//                            break;
-//                        case LineTypeUtils.AGGREGATION:
-//                            index = 4;
-//                            break;
-//                        case LineTypeUtils.FOOTNOTE:
-//                            index = 5;
-//                            break;
-//                        case LineTypeUtils.GROUP_HEADER:
-//                            index = 6;
-//                            break;
-//                    }
-//                    lineTypeComboBox.setSelectedIndex(index);
-//                    sheetDisplayTable.requestFocus();
+                    SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+                    final Color currentColor = sheetDisplayTableModel.getRowColor(sheetDisplayTableSelectionModel.getMinSelectionIndex());
+                    String lineType = ColorSolution.getLineType(currentColor);
+                    if (lineType != null) {
+                        lineTypeDisplay.setText(lineType);
+                    } else {
+                        lineTypeDisplay.setText("n/a");
+                    }
                 }
             }
         });
@@ -369,22 +281,6 @@ public class MainFrame {
                 }
             }
         });
-
-        lineTypeComboBox.addActionListener(e -> {
-            int index = lineTypeComboBox.getSelectedIndex();
-            if (index == 0)
-                return;
-            if (startLine.getText() == null || endLine.getText() == null)
-                return;
-            int startLineIndex = Integer.parseInt(startLine.getText());
-            int endLineIndex = Integer.parseInt(endLine.getText());
-
-            String selectedLineType = Objects.requireNonNull(lineTypeComboBox.getSelectedItem()).toString();
-
-            SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
-            sheetDisplayTableModel.setRowsBackgroundColor(startLineIndex, endLineIndex, ColorSolution.getColor(selectedLineType));
-            lineTypeComboBox.setSelectedIndex(0);
-        });
         copyPatternButton.addActionListener(e -> {
             int startLineIndex = sheetDisplayTableSelectionModel.getMinSelectionIndex();
             int endLineIndex = sheetDisplayTableSelectionModel.getMaxSelectionIndex();
@@ -417,6 +313,28 @@ public class MainFrame {
                 sheetDisplayTable.requestFocus();
                 sheetDisplayTable.changeSelection(endLineIndex, 0, false, false);
             }
+        });
+        submitAsMultitableFileButton.addActionListener(e -> {
+            endTime = System.currentTimeMillis();
+            int selectCode = JOptionPane.showConfirmDialog(null,
+                    "Are you sure to mark this spreadsheet as multi-table sheet?");
+            if (selectCode != JOptionPane.OK_OPTION) {
+                return;
+            }
+
+            String[] nameSplits = currentFile.getName().split("@");
+            String fileName = nameSplits[0];
+            String sheetName = nameSplits[1].split(".csv")[0];
+
+            AnnotationResults results = new AnnotationResults(fileName, sheetName, endTime - startTime, true);
+
+            this.store.addAnnotation(results);
+
+            loadNextFile();
+
+            System.out.println(currentFile.getName());
+
+            startTime = System.currentTimeMillis();
         });
     }
 
@@ -452,10 +370,10 @@ public class MainFrame {
         panel2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         menuTab.addTab("Line Type Annotation", panel2);
         numOfColumnsLabel = new JPanel();
-        numOfColumnsLabel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 6, new Insets(0, 0, 0, 0), -1, -1));
+        numOfColumnsLabel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 5, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(numOfColumnsLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(909, 130), null, 0, false));
         annotationPanel = new JPanel();
-        annotationPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        annotationPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         numOfColumnsLabel.add(annotationPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 2, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         labelOperatingPanel = new JPanel();
         labelOperatingPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
@@ -467,29 +385,23 @@ public class MainFrame {
         endLineLabel = new JLabel();
         endLineLabel.setText("End Line");
         labelOperatingPanel.add(endLineLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        startLine = new JTextField();
-        labelOperatingPanel.add(startLine, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 3, false));
-        endLine = new JTextField();
-        labelOperatingPanel.add(endLine, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 2, false));
+        startLine = new JLabel();
+        startLine.setText("n/a");
+        labelOperatingPanel.add(startLine, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        endLine = new JLabel();
+        endLine.setText("n/a");
+        labelOperatingPanel.add(endLine, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
         lineTypeLabel = new JLabel();
         lineTypeLabel.setText("Line Function Type");
         lineTypeLabel.setVerticalAlignment(0);
         lineTypeLabel.setVerticalTextPosition(0);
         labelOperatingPanel.add(lineTypeLabel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(151, 16), null, 1, false));
-        lineTypeComboBox.setEditable(false);
-        final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
-        defaultComboBoxModel1.addElement("-");
-        defaultComboBoxModel1.addElement("Preamble (P)");
-        defaultComboBoxModel1.addElement("Header (H)");
-        defaultComboBoxModel1.addElement("Data (D)");
-        defaultComboBoxModel1.addElement("Aggregation (A)");
-        defaultComboBoxModel1.addElement("Footnote (F)");
-        defaultComboBoxModel1.addElement("Group Header (G)");
-        lineTypeComboBox.setModel(defaultComboBoxModel1);
-        labelOperatingPanel.add(lineTypeComboBox, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(80, -1), new Dimension(151, 27), new Dimension(160, -1), 2, false));
+        lineTypeDisplay = new JLabel();
+        lineTypeDisplay.setText("n/a");
+        labelOperatingPanel.add(lineTypeDisplay, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(80, -1), new Dimension(151, 27), new Dimension(160, -1), 2, false));
         sheetStatPanel = new JPanel();
         sheetStatPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
-        annotationPanel.add(sheetStatPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        annotationPanel.add(sheetStatPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         sheetStatPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Spreadsheet statistics"));
         numOfLinesLabel = new JLabel();
         numOfLinesLabel.setText("Number of Lines:");
@@ -503,17 +415,23 @@ public class MainFrame {
         numOfLines = new JLabel();
         numOfLines.setText("");
         sheetStatPanel.add(numOfLines, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        submitPanel = new JPanel();
-        submitPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        numOfColumnsLabel.add(submitPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 5, 2, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(311, 31), null, 2, false));
-        submitAndNextFileButton = new JButton();
-        submitAndNextFileButton.setEnabled(true);
-        submitAndNextFileButton.setText("Submit and Next File");
-        submitPanel.add(submitAndNextFileButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        submitAndFinishButton = new JButton();
-        submitAndFinishButton.setEnabled(false);
-        submitAndFinishButton.setText("Submit and Finish");
-        submitPanel.add(submitAndFinishButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(7, 1, new Insets(0, 0, 0, 0), -1, -1));
+        annotationPanel.add(panel3, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        preambleColorLabel.setText("Preamble (P)");
+        panel3.add(preambleColorLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        headerColorLabel.setText("Header (H)");
+        panel3.add(headerColorLabel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        dataColorLabel.setText("Data (D)");
+        panel3.add(dataColorLabel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        aggregationColorLabel.setText("Aggregation (A)");
+        panel3.add(aggregationColorLabel, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        footnoteColorLabel.setText("Footnote (F)");
+        panel3.add(footnoteColorLabel, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        groupHeaderColorLabel.setText("Group header (G)");
+        panel3.add(groupHeaderColorLabel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        emptyColorLabel.setText("Empty (E)");
+        panel3.add(emptyColorLabel, new com.intellij.uiDesigner.core.GridConstraints(6, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         copyPatternButton = new JButton();
         copyPatternButton.setEnabled(false);
         copyPatternButton.setText("Copy pattern");
@@ -525,26 +443,34 @@ public class MainFrame {
         panel2.add(sheetDisplayPane, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
         sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
         loadFilePanel = new JPanel();
-        loadFilePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 3, new Insets(0, 0, 0, 0), -1, -1));
+        loadFilePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(loadFilePanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         loadAllFilesButton = new JButton();
-        loadAllFilesButton.setText("Load All files");
-        loadFilePanel.add(loadAllFilesButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        loadAllFilesButton.setText("Start Annotation");
+        loadFilePanel.add(loadAllFilesButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         loadedFileNumberLabel = new JLabel();
         loadedFileNumberLabel.setText("0");
-        loadFilePanel.add(loadedFileNumberLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        loadFilePanel.add(loadedFileNumberLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         loadedFileLabel = new JLabel();
         loadedFileLabel.setText("File Loaded:");
-        loadFilePanel.add(loadedFileLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        annotationProgress.setIndeterminate(false);
-        annotationProgress.setOrientation(0);
-        annotationProgress.setString("");
-        annotationProgress.setStringPainted(true);
-        annotationProgress.setValue(0);
-        loadFilePanel.add(annotationProgress, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 3, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        menuTab.addTab("Multitable Annotation", panel3);
+        loadFilePanel.add(loadedFileLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        submitPanel = new JPanel();
+        submitPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        loadFilePanel.add(submitPanel, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 3, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(311, 31), null, 2, false));
+        submitAndNextFileButton = new JButton();
+        submitAndNextFileButton.setEnabled(false);
+        submitAndNextFileButton.setText("Submit and Next File");
+        submitPanel.add(submitAndNextFileButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        submitAndFinishButton = new JButton();
+        submitAndFinishButton.setEnabled(false);
+        submitAndFinishButton.setText("Submit and Finish");
+        submitPanel.add(submitAndFinishButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        submitAsMultitableFileButton = new JButton();
+        submitAsMultitableFileButton.setText("Submit as Multitable File");
+        loadFilePanel.add(submitAsMultitableFileButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        menuTab.addTab("Multitable Annotation", panel4);
     }
 
     /**
@@ -578,24 +504,33 @@ public class MainFrame {
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
         JTable rowTable = new RowNumberTable(sheetDisplayTable);
         sheetDisplayPane.setRowHeaderView(rowTable);
-//        sheetDisplayPane.setCorner(JScrollPane.UPPER_LEFT_CORNER, rowTable.getTableHeader());
-
-        lineTypeComboBox = new JComboBox<>();
-        lineTypeComboBox.setEditable(false);
-        final DefaultComboBoxModel<String> comboItems = new DefaultComboBoxModel<>();
-        comboItems.addElement("-");
-        comboItems.addElement(LineTypeUtils.PREAMBLE);
-        comboItems.addElement(LineTypeUtils.HEADER);
-        comboItems.addElement(LineTypeUtils.DATA);
-        comboItems.addElement(LineTypeUtils.AGGREGATION);
-        comboItems.addElement(LineTypeUtils.FOOTNOTE);
-        comboItems.addElement(LineTypeUtils.GROUP_HEADER);
-        lineTypeComboBox.setModel(comboItems);
 
         annotationProgress = new JProgressBar();
         annotationProgress.setIndeterminate(false);
         annotationProgress.setOrientation(0);
         annotationProgress.setStringPainted(true);
+
+        preambleColorLabel = new JLabel("Preamble (P)");
+        preambleColorLabel.setOpaque(true);
+        preambleColorLabel.setBackground(ColorSolution.PREAMBLE_BACKGROUND_COLOR);
+        headerColorLabel = new JLabel("Header (H)");
+        headerColorLabel.setOpaque(true);
+        headerColorLabel.setBackground(ColorSolution.HEADER_BACKGROUND_COLOR);
+        dataColorLabel = new JLabel("Data (D)");
+        dataColorLabel.setOpaque(true);
+        dataColorLabel.setBackground(ColorSolution.DATA_BACKGROUND_COLOR);
+        aggregationColorLabel = new JLabel("Aggregation (A)");
+        aggregationColorLabel.setOpaque(true);
+        aggregationColorLabel.setBackground(ColorSolution.AGGREGATION_BACKGROUND_COLOR);
+        footnoteColorLabel = new JLabel("Footnote (F)");
+        footnoteColorLabel.setOpaque(true);
+        footnoteColorLabel.setBackground(ColorSolution.FOOTNOTE_BACKGROUND_COLOR);
+        groupHeaderColorLabel = new JLabel("Group header (G)");
+        groupHeaderColorLabel.setOpaque(true);
+        groupHeaderColorLabel.setBackground(ColorSolution.GROUND_HEADER_BACKGROUND_COLOR);
+        emptyColorLabel = new JLabel("Empty (E)");
+        emptyColorLabel.setOpaque(true);
+        emptyColorLabel.setBackground(ColorSolution.EMPTY_LINE_BACKGROUND_COLOR);
     }
 
     private void loadFile(final File file) throws IOException {
@@ -714,5 +649,67 @@ public class MainFrame {
         });
         lineTypePopupMenu.add(lineTypeMenuItem);
         return lineTypePopupMenu;
+    }
+
+    private void submitResult() {
+        SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+        if (sheetDisplayTableModel.hasUnannotatedLines()) {
+            int selectCode = JOptionPane.showConfirmDialog(null,
+                    "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
+            if (selectCode != JOptionPane.OK_OPTION) {
+                return;
+            }
+        }
+
+        String[] nameSplits = currentFile.getName().split("@");
+        String fileName = nameSplits[0];
+        String sheetName = nameSplits[1].split(".csv")[0];
+
+        AnnotationResults results = new AnnotationResults(fileName, sheetName, endTime - startTime);
+
+        results.annotate(sheetDisplayTableModel);
+
+        this.store.addAnnotation(results);
+    }
+
+    private void loadNextFile() {
+        if (currentFile == null) {
+            // load a random new table
+            Random random = new Random(System.currentTimeMillis());
+            int selectedIndex = random.nextInt(loadedFiles.length);
+
+            currentFile = loadedFiles[selectedIndex];
+
+            String[] nameSplits = currentFile.getName().split("@");
+            String fileName = nameSplits[0];
+            String sheetName = nameSplits[1].split(".csv")[0];
+
+            // Todo: replace with the local file system
+            int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
+            currentSheet = new Sheet(sheetName, fileName, amount);
+
+            System.out.println(currentFile.getName());
+        } else {
+            //                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
+
+            // get the most similar file
+//        Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
+            List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
+            Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
+            currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
+            currentSheet = mostSimilarSheet;
+
+        }
+
+        annotatedFileAmount++;
+        this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
+
+        System.out.println(currentFile.getName());
+
+        try {
+            loadFile(currentFile);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 }

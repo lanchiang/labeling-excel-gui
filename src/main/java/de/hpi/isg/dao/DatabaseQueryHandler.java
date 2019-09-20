@@ -18,12 +18,12 @@ import java.util.Map;
  * @author Lan Jiang
  * @since 9/10/19
  */
-public class QueryHandler implements AbstractQueries {
+public class DatabaseQueryHandler implements AbstractQueries {
 
     @Getter
     private final DatabaseConnector databaseConnector;
 
-    public QueryHandler() {
+    public DatabaseQueryHandler() {
         this.databaseConnector = new DatabaseConnector();
 //        this.databaseConnector = null;
     }
