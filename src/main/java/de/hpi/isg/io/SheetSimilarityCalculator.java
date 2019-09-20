@@ -107,19 +107,4 @@ public class SheetSimilarityCalculator {
             e.printStackTrace();
         }
     }
-
-    public File getMostSimilarFile(File file) {
-        Map<String, Double> candidates = similarities.get(file.getName());
-        return new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/" + candidates.entrySet().iterator().next().getKey());
-    }
-
-    public File getMostSimilarFile(Sheet sheet) {
-        return new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/" + sheet.getExcelFileName() + "@" + sheet.getSheetName() + ".csv");
-    }
-
-    public static void main(String[] args) {
-        File[] files = new File("/Users/Fuga/Documents/hpi/code/data-downloader/data_excel_uk_converted").listFiles();
-        SheetSimilarityCalculator calculator = new SheetSimilarityCalculator(files);
-        calculator.calculate();
-    }
 }

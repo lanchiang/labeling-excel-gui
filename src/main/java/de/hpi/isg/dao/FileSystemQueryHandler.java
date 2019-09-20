@@ -13,6 +13,12 @@ import java.util.Map;
  */
 public class FileSystemQueryHandler implements AbstractQueries {
 
+    private final List<Sheet> sheets;
+
+    public FileSystemQueryHandler(List<Sheet> sheets) {
+        this.sheets = sheets;
+    }
+
     @Override
     public void insertLineFunctionAnnotationResults(AnnotationResults results) {
 

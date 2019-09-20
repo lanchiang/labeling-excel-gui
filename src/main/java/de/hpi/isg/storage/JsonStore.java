@@ -36,22 +36,23 @@ public class JsonStore extends Store {
 
         Collection<AnnotationPojo> results = new LinkedList<>();
 
-        String lineType = annotationResults.getAnnotationResults().get(0).getType();
-        int startLineNumber = 0;
-        int endLineNumber = 0;
-        for (int i = 1; i < annotationResults.getAnnotationResults().size(); i++) {
-            AnnotationResults.AnnotationResult annotationResult = annotationResults.getAnnotationResults().get(i);
-            if (annotationResult.getType().equals(lineType)) {
-                endLineNumber = i;
-            } else {
-                results.add(new AnnotationPojo(startLineNumber + 1, endLineNumber + 1, lineType));
-                startLineNumber = i;
-                endLineNumber = i;
-                lineType = annotationResult.getType();
+        if (annotationResults.getAnnotationResults().size() != 0) {
+            String lineType = annotationResults.getAnnotationResults().get(0).getType();
+            int startLineNumber = 0;
+            int endLineNumber = 0;
+            for (int i = 1; i < annotationResults.getAnnotationResults().size(); i++) {
+                AnnotationResults.AnnotationResult annotationResult = annotationResults.getAnnotationResults().get(i);
+                if (annotationResult.getType().equals(lineType)) {
+                    endLineNumber = i;
+                } else {
+                    results.add(new AnnotationPojo(startLineNumber + 1, endLineNumber + 1, lineType));
+                    startLineNumber = i;
+                    endLineNumber = i;
+                    lineType = annotationResult.getType();
+                }
             }
+            results.add(new AnnotationPojo(startLineNumber + 1, endLineNumber + 1, lineType));
         }
-        results.add(new AnnotationPojo(startLineNumber + 1, endLineNumber + 1, lineType));
-
-        return new SpreadSheetPojo(spreadsheetName, excelFileName, timeExpense, results);
+        return new SpreadSheetPojo(spreadsheetName, excelFileName, timeExpense, annotationResults.isMultitableFile(), results);
     }
 }

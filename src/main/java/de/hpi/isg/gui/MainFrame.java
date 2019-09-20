@@ -64,7 +64,6 @@ public class MainFrame {
     private JButton copyPatternButton;
     private JButton pastePatternButton;
     private JPanel loadFilePanel;
-    private JProgressBar annotationProgress;
     private JLabel preambleColorLabel;
     private JLabel headerColorLabel;
     private JLabel dataColorLabel;
@@ -81,8 +80,6 @@ public class MainFrame {
     private File currentFile;
 
     private Sheet currentSheet;
-
-    private SheetSimilarityCalculator calculator;
 
     private long startTime;
 
@@ -163,14 +160,32 @@ public class MainFrame {
 
                 loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
 
-                calculator = new SheetSimilarityCalculator(loadedFiles);
+                List<File> fileList = Arrays.stream(loadedFiles).filter(file -> !file.getName().equals(".DS_Store")).collect(Collectors.toList());
 
-                this.queryHandler.loadExcelFileStatistics(calculator.getSheetNamesByFileName());
+                final Map<String, List<String>> sheetNamesByFileName = new HashMap<>();
+                fileList.forEach(file -> {
+                    String[] nameSplits = file.getName().split("@");
+                    String fileName = nameSplits[0];
+                    String sheetName = nameSplits[1].split(".csv")[0];
+
+                    sheetNamesByFileName.putIfAbsent(fileName, new LinkedList<>());
+                    sheetNamesByFileName.get(fileName).add(sheetName);
+                });
+
+                List<Sheet> sheets = new ArrayList<>();
+                sheetNamesByFileName.forEach((key, value) -> value.forEach(sheetList -> {
+                    sheets.add(new Sheet(sheetList, key, value.size()));
+                }));
+
+//                calculator = new SheetSimilarityCalculator(loadedFiles);
+
+//                this.queryHandler.loadExcelFileStatistics(calculator.getSheetNamesByFileName()); // todo: change to file system
 
                 submitAndNextFileButton.setEnabled(true);
                 submitAndFinishButton.setEnabled(true);
 
-                store = new RDMBSStore(null, this.queryHandler);
+//                store = new RDMBSStore(null, this.queryHandler);
+                store = new JsonStore(sheets);
 
                 this.submitAndNextFileButton.setEnabled(true);
 
@@ -505,11 +520,6 @@ public class MainFrame {
         JTable rowTable = new RowNumberTable(sheetDisplayTable);
         sheetDisplayPane.setRowHeaderView(rowTable);
 
-        annotationProgress = new JProgressBar();
-        annotationProgress.setIndeterminate(false);
-        annotationProgress.setOrientation(0);
-        annotationProgress.setStringPainted(true);
-
         preambleColorLabel = new JLabel("Preamble (P)");
         preambleColorLabel.setOpaque(true);
         preambleColorLabel.setBackground(ColorSolution.PREAMBLE_BACKGROUND_COLOR);
@@ -685,20 +695,23 @@ public class MainFrame {
             String sheetName = nameSplits[1].split(".csv")[0];
 
             // Todo: replace with the local file system
-            int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
-            currentSheet = new Sheet(sheetName, fileName, amount);
+//            int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
+
+//            int amount = this.store.getSpreadsheetAmountByExcelFileName(fileName);
+//            currentSheet = new Sheet(sheetName, fileName, amount);
+
+            currentSheet = this.store.getSpreadsheet(fileName, sheetName);
 
             System.out.println(currentFile.getName());
         } else {
             //                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
 
             // get the most similar file
-//        Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
-            List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
-            Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
-            currentFile = calculator.getMostSimilarFile(mostSimilarSheet);
+            Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
+//            List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
+//            Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
+            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/" + mostSimilarSheet.getExcelFileName() + "@" + mostSimilarSheet.getSheetName() + ".csv");
             currentSheet = mostSimilarSheet;
-
         }
 
         annotatedFileAmount++;

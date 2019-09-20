@@ -53,4 +53,14 @@ abstract public class Store {
     }
 
     abstract public void addAnnotation(AnnotationResults results);
+
+    public Sheet getSpreadsheet(String excelName, String spreadsheetName) {
+        Optional<Sheet> optionalSheet = spreadsheetPool.stream()
+                .filter(element -> element.getExcelFileName().equals(excelName) && element.getSheetName().equals(spreadsheetName)).findFirst();
+        return optionalSheet.orElse(null);
+    }
+
+    public int getSpreadsheetAmountByExcelFileName(String excelFileName) {
+        return (int) spreadsheetPool.stream().filter(element -> element.getExcelFileName().equals(excelFileName)).count();
+    }
 }
