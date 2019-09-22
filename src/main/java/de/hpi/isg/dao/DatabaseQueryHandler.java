@@ -24,8 +24,8 @@ public class DatabaseQueryHandler implements AbstractQueries {
     private final DatabaseConnector databaseConnector;
 
     public DatabaseQueryHandler() {
-        this.databaseConnector = new DatabaseConnector();
-//        this.databaseConnector = null;
+//        this.databaseConnector = new DatabaseConnector();
+        this.databaseConnector = null;
     }
 
     public void close() {

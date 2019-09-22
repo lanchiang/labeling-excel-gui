@@ -8,10 +8,8 @@ import de.hpi.isg.features.FileNameSimilarityFeature;
 import de.hpi.isg.features.SheetAmountFeature;
 import de.hpi.isg.features.SheetNameSimilarityFeature;
 import de.hpi.isg.features.SheetSimilarityFeature;
-import de.hpi.isg.io.SheetSimilarityCalculator;
 import de.hpi.isg.json.JsonWriter;
 import de.hpi.isg.pojo.SpreadSheetPojo;
-import de.hpi.isg.storage.RDMBSStore;
 import de.hpi.isg.storage.Store;
 import de.hpi.isg.storage.JsonStore;
 import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
@@ -20,10 +18,12 @@ import de.hpi.isg.swing.SheetDisplayTableModel;
 import de.hpi.isg.utils.ColorSolution;
 import lombok.Getter;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -42,8 +42,8 @@ public class MainFrame {
     private JLabel startLine;
     private JLabel endLine;
     private JLabel lineTypeDisplay;
-    private JButton submitAndNextFileButton;
-    private JButton submitAndFinishButton;
+    private JButton finishThisAnnotationButton;
+    private JButton submitAllResultButton;
     private JTable sheetDisplayTable;
     private JPanel labelOperatingPanel;
     private JLabel startLineLabel;
@@ -57,7 +57,6 @@ public class MainFrame {
     private JLabel numOfLines;
     private JLabel numOfLinesLabel;
     private JLabel numOfColumns;
-    private JPanel numOfColumnsLabel;
     private JPanel sheetStatPanel;
     private JPanel annotationPanel;
     private JTabbedPane menuTab;
@@ -72,6 +71,21 @@ public class MainFrame {
     private JLabel groupHeaderColorLabel;
     private JLabel emptyColorLabel;
     private JButton submitAsMultitableFileButton;
+    private JButton nextFileButton;
+    private JPanel startEndJPanel;
+    private JLabel preambleDesc;
+    private JLabel headerDesc;
+    private JLabel dataDesc;
+    private JLabel aggregationDesc;
+    private JLabel footnoteDesc;
+    private JLabel groupheaderDesc;
+    private JPanel lineTypeDescriptionPanel;
+    private JLabel groupheaderExample;
+    private JPanel howToUsePanel;
+    private JPanel colorInstructionPanel;
+    private JPanel patternOperationPanel;
+    private JPanel operatingPanel;
+    private JPanel exampleFigurePanel;
 
     private int annotatedFileAmount = 0;
 
@@ -89,39 +103,25 @@ public class MainFrame {
 
     private Color[] colorPattern;
 
+    private String inputFileFolder;
+
     @Getter
     private DatabaseQueryHandler queryHandler = new DatabaseQueryHandler();
 
     public MainFrame() {
         $$$setupUI$$$();
-        submitAndFinishButton.addActionListener(e -> {
-            endTime = System.currentTimeMillis();
-            long duration = 0L;
-            if (startTime != 0L) {
-                duration = endTime - startTime;
-            }
-
+        submitAllResultButton.addActionListener(e -> {
             // write the results into a json file.
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
                 SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) tableModel;
                 if (sheetDisplayTableModel.hasUnannotatedLines()) {
                     int selectCode = JOptionPane.showConfirmDialog(null,
-                            "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
+                            "Seems this file has not been annotated. Do you want to anyway finish?");
                     if (selectCode != JOptionPane.OK_OPTION) {
                         return;
                     }
                 }
-
-                String[] nameSplits = currentFile.getName().split("@");
-                String fileName = nameSplits[0];
-                String sheetName = nameSplits[1].split(".csv")[0];
-
-                AnnotationResults results = new AnnotationResults(fileName, sheetName, duration);
-
-                results.annotate(sheetDisplayTableModel);
-
-                this.store.addAnnotation(results);
 
                 JsonWriter<SpreadSheetPojo> writer = new JsonWriter<>();
                 writer.write(((JsonStore) store).getResultCache());
@@ -129,25 +129,31 @@ public class MainFrame {
                 this.queryHandler.close();
             }
         });
-        submitAndNextFileButton.addActionListener(e -> {
+        finishThisAnnotationButton.addActionListener(e -> {
             endTime = System.currentTimeMillis();
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                submitResult();
-                loadNextFile();
+                if (!submitResult()) {
+                    return;
+                }
+//                loadNextFile();
             } else {
                 throw new RuntimeException("There is no sheet being displayed.");
             }
 
 //            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
 
-            System.out.println(currentFile.getName());
+            this.submitAsMultitableFileButton.setEnabled(false);
+            this.finishThisAnnotationButton.setEnabled(false);
+
+            this.nextFileButton.setEnabled(true);
 
             startTime = System.currentTimeMillis();
         });
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
-            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/data/excel-to-csv"));
+//            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/data/excel-to-csv"));
+            chooser.setCurrentDirectory(new File("."));
             chooser.setDialogTitle("Dialog title");
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             chooser.setAcceptAllFileFilterUsed(false);
@@ -155,6 +161,8 @@ public class MainFrame {
             int choiceCode = chooser.showOpenDialog(loadAllFilesButton);
             if (choiceCode == JFileChooser.APPROVE_OPTION) {
                 File selectedDir = chooser.getSelectedFile();
+                this.inputFileFolder = chooser.getSelectedFile().getPath();
+//                System.out.println(this.inputFileFolder);
                 loadedFiles = selectedDir.listFiles();
                 assert loadedFiles != null;
 
@@ -177,17 +185,13 @@ public class MainFrame {
                     sheets.add(new Sheet(sheetList, key, value.size()));
                 }));
 
-//                calculator = new SheetSimilarityCalculator(loadedFiles);
-
-//                this.queryHandler.loadExcelFileStatistics(calculator.getSheetNamesByFileName()); // todo: change to file system
-
-                submitAndNextFileButton.setEnabled(true);
-                submitAndFinishButton.setEnabled(true);
+                submitAsMultitableFileButton.setEnabled(true);
+                finishThisAnnotationButton.setEnabled(true);
+                submitAllResultButton.setEnabled(true);
+                nextFileButton.setEnabled(true);
 
 //                store = new RDMBSStore(null, this.queryHandler);
                 store = new JsonStore(sheets);
-
-                this.submitAndNextFileButton.setEnabled(true);
 
                 loadNextFile();
                 startTime = System.currentTimeMillis();
@@ -345,11 +349,19 @@ public class MainFrame {
 
             this.store.addAnnotation(results);
 
-            loadNextFile();
+            this.submitAsMultitableFileButton.setEnabled(false);
+            this.finishThisAnnotationButton.setEnabled(false);
 
-            System.out.println(currentFile.getName());
+            this.nextFileButton.setEnabled(true);
 
             startTime = System.currentTimeMillis();
+        });
+        nextFileButton.addActionListener(e -> {
+            loadNextFile();
+            this.submitAsMultitableFileButton.setEnabled(true);
+            this.finishThisAnnotationButton.setEnabled(true);
+
+            this.nextFileButton.setEnabled(false);
         });
     }
 
@@ -357,8 +369,11 @@ public class MainFrame {
         JFrame frame = new JFrame("Excel File Line Function Annotator");
         frame.setContentPane(new MainFrame().mainPagePanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         frame.pack();
+        frame.setSize(screenSize);
+        frame.setExtendedState(Frame.MAXIMIZED_BOTH);
         frame.setVisible(true);
     }
 
@@ -372,48 +387,228 @@ public class MainFrame {
     private void $$$setupUI$$$() {
         createUIComponents();
         mainPagePanel = new JPanel();
-        mainPagePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        mainPagePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1, true, true));
         mainPagePanel.setBorder(BorderFactory.createTitledBorder(""));
         menuTab = new JTabbedPane();
         menuTab.setTabLayoutPolicy(1);
         menuTab.setTabPlacement(1);
-        mainPagePanel.add(menuTab, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        mainPagePanel.add(menuTab, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, 1, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         menuTab.addTab("Instruction", panel1);
+        lineTypeDescriptionPanel = new JPanel();
+        lineTypeDescriptionPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(6, 2, new Insets(5, 10, 5, 10), -1, -1));
+        panel1.add(lineTypeDescriptionPanel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_NORTHWEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
+        lineTypeDescriptionPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Line Type Description"));
+        preambleDesc.setText("Preamble");
+        lineTypeDescriptionPanel.add(preambleDesc, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, 16), null, 0, false));
+        headerDesc.setText("Header");
+        lineTypeDescriptionPanel.add(headerDesc, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, 16), null, 0, false));
+        dataDesc.setText("Data");
+        lineTypeDescriptionPanel.add(dataDesc, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, 16), null, 0, false));
+        aggregationDesc.setText("Aggregation");
+        lineTypeDescriptionPanel.add(aggregationDesc, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, 16), null, 0, false));
+        footnoteDesc.setText("Footnote");
+        lineTypeDescriptionPanel.add(footnoteDesc, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, 16), null, 0, false));
+        groupheaderDesc.setText("Group header");
+        lineTypeDescriptionPanel.add(groupheaderDesc, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, 16), null, 0, false));
+        final JLabel label1 = new JLabel();
+        label1.setText("A preamble line describes the characteristics of a table following it.");
+        lineTypeDescriptionPanel.add(label1, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label2 = new JLabel();
+        label2.setText("A header line describes the header of a table, including single column header line or cross column header line. Therefore, a table may have multiple header lines.");
+        lineTypeDescriptionPanel.add(label2, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label3 = new JLabel();
+        label3.setText("A data line describes the value of a table.");
+        lineTypeDescriptionPanel.add(label3, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label4 = new JLabel();
+        label4.setText("An aggregation line displays the aggregation results (e.g., sum, average) of several other lines in the table.");
+        lineTypeDescriptionPanel.add(label4, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label5 = new JLabel();
+        label5.setText("A footnote line gives explanations of part of or the whole table and appears after the table.");
+        lineTypeDescriptionPanel.add(label5, new com.intellij.uiDesigner.core.GridConstraints(4, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label6 = new JLabel();
+        label6.setText("A group header is a header of a group of lines in a table. In the example below, the line May (1st line) and June (11st line) are both group header lines.");
+        lineTypeDescriptionPanel.add(label6, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        howToUsePanel = new JPanel();
+        howToUsePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(9, 1, new Insets(5, 10, 5, 10), -1, -1));
+        panel1.add(howToUsePanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_NORTHWEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
+        howToUsePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "How to Use"));
+        final JLabel label7 = new JLabel();
+        label7.setText("Click on the \"Line Type Annotation\" tab.");
+        howToUsePanel.add(label7, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label8 = new JLabel();
+        label8.setText("Click \"Start Annotation\" to select the input file folder.");
+        howToUsePanel.add(label8, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label9 = new JLabel();
+        label9.setText("In the displayed spreadsheet, you can select a line block and mark it as one of the following six line types plus empty line.");
+        howToUsePanel.add(label9, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label10 = new JLabel();
+        label10.setText("The color helps you to determine the line types. The spreadsheet statistics indicate the width and length of this file.");
+        howToUsePanel.add(label10, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label11 = new JLabel();
+        label11.setText("If you think the line type pattern of some consecutive lines can be reused for some other lines.");
+        howToUsePanel.add(label11, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label12 = new JLabel();
+        label12.setText("After finish annotation of this file, click \"Finish annotation\", and \"Next File\" for the next file.");
+        howToUsePanel.add(label12, new com.intellij.uiDesigner.core.GridConstraints(7, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label13 = new JLabel();
+        label13.setText("If you think this file is a multi-table file, you don't need to annotate any line. Instead, you just click \"Mark as Multitable File\", and prceed to the next file.");
+        howToUsePanel.add(label13, new com.intellij.uiDesigner.core.GridConstraints(8, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label14 = new JLabel();
+        label14.setText("To mark it, you can either select the line type in the right click menu, or use shortcut key.");
+        howToUsePanel.add(label14, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label15 = new JLabel();
+        label15.setText("You can select them, click \"Copy pattern\", and chose the first line where you want to reuse the pattern, and click \"Paste pattern\".");
+        howToUsePanel.add(label15, new com.intellij.uiDesigner.core.GridConstraints(6, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        exampleFigurePanel = new JPanel();
+        exampleFigurePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.add(exampleFigurePanel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_NORTHWEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        groupheaderExample = new JLabel();
+        groupheaderExample.setIcon(new ImageIcon(getClass().getResource("/groupheader-example.png")));
+        groupheaderExample.setText("");
+        exampleFigurePanel.add(groupheaderExample, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         menuTab.addTab("Line Type Annotation", panel2);
-        numOfColumnsLabel = new JPanel();
-        numOfColumnsLabel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 5, new Insets(0, 0, 0, 0), -1, -1));
-        panel2.add(numOfColumnsLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(909, 130), null, 0, false));
+        panel2.add(sheetDisplayPane, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
+        sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
+        operatingPanel = new JPanel();
+        operatingPanel.setLayout(new GridBagLayout());
+        panel2.add(operatingPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        loadFilePanel = new JPanel();
+        loadFilePanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc;
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        operatingPanel.add(loadFilePanel, gbc);
+        submitPanel = new JPanel();
+        submitPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(5, 5, 5, 5), -1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        loadFilePanel.add(submitPanel, gbc);
+        submitPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, -1, -1, submitPanel.getFont())));
+        submitAsMultitableFileButton = new JButton();
+        submitAsMultitableFileButton.setEnabled(false);
+        submitAsMultitableFileButton.setText("Mark as Multitable File");
+        submitPanel.add(submitAsMultitableFileButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        finishThisAnnotationButton = new JButton();
+        finishThisAnnotationButton.setEnabled(false);
+        finishThisAnnotationButton.setText("Finish annotation");
+        submitPanel.add(finishThisAnnotationButton, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        nextFileButton = new JButton();
+        nextFileButton.setEnabled(false);
+        nextFileButton.setText("Next File");
+        submitPanel.add(nextFileButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        startEndJPanel = new JPanel();
+        startEndJPanel.setLayout(new GridBagLayout());
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        loadFilePanel.add(startEndJPanel, gbc);
+        startEndJPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null));
+        loadAllFilesButton = new JButton();
+        loadAllFilesButton.setText("Start Annotation");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        startEndJPanel.add(loadAllFilesButton, gbc);
+        submitAllResultButton = new JButton();
+        submitAllResultButton.setEnabled(false);
+        submitAllResultButton.setText("Subtmit all Results");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        startEndJPanel.add(submitAllResultButton, gbc);
+        loadedFileNumberLabel = new JLabel();
+        loadedFileNumberLabel.setText("0");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.weighty = 1.0;
+        startEndJPanel.add(loadedFileNumberLabel, gbc);
+        loadedFileLabel = new JLabel();
+        loadedFileLabel.setText("File Annotated / Loaded:");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        startEndJPanel.add(loadedFileLabel, gbc);
         annotationPanel = new JPanel();
-        annotationPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        numOfColumnsLabel.add(annotationPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 2, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        annotationPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        operatingPanel.add(annotationPanel, gbc);
         labelOperatingPanel = new JPanel();
-        labelOperatingPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
-        annotationPanel.add(labelOperatingPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(311, 56), null, 1, false));
+        labelOperatingPanel.setLayout(new GridBagLayout());
+        annotationPanel.add(labelOperatingPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(311, 56), null, 1, false));
         labelOperatingPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "Block selection", TitledBorder.LEFT, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, -1, -1, labelOperatingPanel.getFont()), new Color(-16777216)));
         startLineLabel = new JLabel();
         startLineLabel.setText("Start Line");
-        labelOperatingPanel.add(startLineLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        labelOperatingPanel.add(startLineLabel, gbc);
         endLineLabel = new JLabel();
         endLineLabel.setText("End Line");
-        labelOperatingPanel.add(endLineLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        labelOperatingPanel.add(endLineLabel, gbc);
         startLine = new JLabel();
         startLine.setText("n/a");
-        labelOperatingPanel.add(startLine, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        labelOperatingPanel.add(startLine, gbc);
         endLine = new JLabel();
         endLine.setText("n/a");
-        labelOperatingPanel.add(endLine, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        labelOperatingPanel.add(endLine, gbc);
         lineTypeLabel = new JLabel();
         lineTypeLabel.setText("Line Function Type");
         lineTypeLabel.setVerticalAlignment(0);
         lineTypeLabel.setVerticalTextPosition(0);
-        labelOperatingPanel.add(lineTypeLabel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(151, 16), null, 1, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.weighty = 1.0;
+        labelOperatingPanel.add(lineTypeLabel, gbc);
         lineTypeDisplay = new JLabel();
         lineTypeDisplay.setText("n/a");
-        labelOperatingPanel.add(lineTypeDisplay, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(80, -1), new Dimension(151, 27), new Dimension(160, -1), 2, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.weighty = 1.0;
+        labelOperatingPanel.add(lineTypeDisplay, gbc);
         sheetStatPanel = new JPanel();
         sheetStatPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         annotationPanel.add(sheetStatPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -424,68 +619,44 @@ public class MainFrame {
         numOfColumns = new JLabel();
         numOfColumns.setText("");
         sheetStatPanel.add(numOfColumns, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JLabel label1 = new JLabel();
-        label1.setText("Number of Columns");
-        sheetStatPanel.add(label1, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label16 = new JLabel();
+        label16.setText("Number of Columns");
+        sheetStatPanel.add(label16, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         numOfLines = new JLabel();
         numOfLines.setText("");
         sheetStatPanel.add(numOfLines, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(7, 1, new Insets(0, 0, 0, 0), -1, -1));
-        annotationPanel.add(panel3, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        colorInstructionPanel = new JPanel();
+        colorInstructionPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(7, 1, new Insets(0, 0, 0, 0), -1, -1));
+        annotationPanel.add(colorInstructionPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         preambleColorLabel.setText("Preamble (P)");
-        panel3.add(preambleColorLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorInstructionPanel.add(preambleColorLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
         headerColorLabel.setText("Header (H)");
-        panel3.add(headerColorLabel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorInstructionPanel.add(headerColorLabel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
         dataColorLabel.setText("Data (D)");
-        panel3.add(dataColorLabel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorInstructionPanel.add(dataColorLabel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
         aggregationColorLabel.setText("Aggregation (A)");
-        panel3.add(aggregationColorLabel, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorInstructionPanel.add(aggregationColorLabel, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
         footnoteColorLabel.setText("Footnote (F)");
-        panel3.add(footnoteColorLabel, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorInstructionPanel.add(footnoteColorLabel, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
         groupHeaderColorLabel.setText("Group header (G)");
-        panel3.add(groupHeaderColorLabel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorInstructionPanel.add(groupHeaderColorLabel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
         emptyColorLabel.setText("Empty (E)");
-        panel3.add(emptyColorLabel, new com.intellij.uiDesigner.core.GridConstraints(6, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorInstructionPanel.add(emptyColorLabel, new com.intellij.uiDesigner.core.GridConstraints(6, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
+        patternOperationPanel = new JPanel();
+        patternOperationPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        annotationPanel.add(patternOperationPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        patternOperationPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "Pattern operation"));
         copyPatternButton = new JButton();
         copyPatternButton.setEnabled(false);
         copyPatternButton.setText("Copy pattern");
-        numOfColumnsLabel.add(copyPatternButton, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        patternOperationPanel.add(copyPatternButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, new Dimension(200, -1), 0, false));
         pastePatternButton = new JButton();
         pastePatternButton.setEnabled(false);
         pastePatternButton.setText("Paste pattern");
-        numOfColumnsLabel.add(pastePatternButton, new com.intellij.uiDesigner.core.GridConstraints(1, 4, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        panel2.add(sheetDisplayPane, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
-        sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
-        loadFilePanel = new JPanel();
-        loadFilePanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
-        panel2.add(loadFilePanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        loadAllFilesButton = new JButton();
-        loadAllFilesButton.setText("Start Annotation");
-        loadFilePanel.add(loadAllFilesButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        loadedFileNumberLabel = new JLabel();
-        loadedFileNumberLabel.setText("0");
-        loadFilePanel.add(loadedFileNumberLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        loadedFileLabel = new JLabel();
-        loadedFileLabel.setText("File Loaded:");
-        loadFilePanel.add(loadedFileLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        submitPanel = new JPanel();
-        submitPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        loadFilePanel.add(submitPanel, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 3, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(311, 31), null, 2, false));
-        submitAndNextFileButton = new JButton();
-        submitAndNextFileButton.setEnabled(false);
-        submitAndNextFileButton.setText("Submit and Next File");
-        submitPanel.add(submitAndNextFileButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        submitAndFinishButton = new JButton();
-        submitAndFinishButton.setEnabled(false);
-        submitAndFinishButton.setText("Submit and Finish");
-        submitPanel.add(submitAndFinishButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        submitAsMultitableFileButton = new JButton();
-        submitAsMultitableFileButton.setText("Submit as Multitable File");
-        loadFilePanel.add(submitAsMultitableFileButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        menuTab.addTab("Multitable Annotation", panel4);
+        patternOperationPanel.add(pastePatternButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, new Dimension(200, -1), 0, false));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        menuTab.addTab("Multitable Annotation", panel3);
     }
 
     /**
@@ -541,6 +712,26 @@ public class MainFrame {
         emptyColorLabel = new JLabel("Empty (E)");
         emptyColorLabel.setOpaque(true);
         emptyColorLabel.setBackground(ColorSolution.EMPTY_LINE_BACKGROUND_COLOR);
+
+        preambleDesc = new JLabel("Preamble (P)");
+        preambleDesc.setOpaque(true);
+        preambleDesc.setBackground(ColorSolution.PREAMBLE_BACKGROUND_COLOR);
+        headerDesc = new JLabel("Header (H)");
+        headerDesc.setOpaque(true);
+        headerDesc.setBackground(ColorSolution.HEADER_BACKGROUND_COLOR);
+        dataDesc = new JLabel("Data (D)");
+        dataDesc.setOpaque(true);
+        dataDesc.setBackground(ColorSolution.DATA_BACKGROUND_COLOR);
+        aggregationDesc = new JLabel("Aggregation (A)");
+        aggregationDesc.setOpaque(true);
+        aggregationDesc.setBackground(ColorSolution.AGGREGATION_BACKGROUND_COLOR);
+        footnoteDesc = new JLabel("Footnote (F)");
+        footnoteDesc.setOpaque(true);
+        footnoteDesc.setBackground(ColorSolution.FOOTNOTE_BACKGROUND_COLOR);
+        groupheaderDesc = new JLabel("Group header (G)");
+        groupheaderDesc.setOpaque(true);
+        groupheaderDesc.setBackground(ColorSolution.GROUND_HEADER_BACKGROUND_COLOR);
+
     }
 
     private void loadFile(final File file) throws IOException {
@@ -567,10 +758,7 @@ public class MainFrame {
 
         this.copyPatternButton.setEnabled(true);
 
-        for (int i = 0; i < dataEntries.get(0).length; i++) {
-            TableColumn column = sheetDisplayTable.getColumnModel().getColumn(i);
-            column.setPreferredWidth(150);
-        }
+        resizeColumnWidth(sheetDisplayTable);
 
         System.out.println(tableModel.getColumnCount() + "\t" + tableModel.getRowCount());
     }
@@ -661,13 +849,13 @@ public class MainFrame {
         return lineTypePopupMenu;
     }
 
-    private void submitResult() {
+    private boolean submitResult() {
         SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
         if (sheetDisplayTableModel.hasUnannotatedLines()) {
             int selectCode = JOptionPane.showConfirmDialog(null,
                     "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
             if (selectCode != JOptionPane.OK_OPTION) {
-                return;
+                return false;
             }
         }
 
@@ -680,6 +868,8 @@ public class MainFrame {
         results.annotate(sheetDisplayTableModel);
 
         this.store.addAnnotation(results);
+
+        return true;
     }
 
     private void loadNextFile() {
@@ -694,23 +884,14 @@ public class MainFrame {
             String fileName = nameSplits[0];
             String sheetName = nameSplits[1].split(".csv")[0];
 
-            // Todo: replace with the local file system
-//            int amount = this.queryHandler.getSheetAmountByExcelName(fileName);
-
-//            int amount = this.store.getSpreadsheetAmountByExcelFileName(fileName);
-//            currentSheet = new Sheet(sheetName, fileName, amount);
-
             currentSheet = this.store.getSpreadsheet(fileName, sheetName);
 
-            System.out.println(currentFile.getName());
         } else {
-            //                resultCache.addResultToCache(resultCache.convertToResultCacheFormat(results));
-
             // get the most similar file
             Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
-//            List<Sheet> sheets = this.queryHandler.getAllUnannotatedSpreadsheet();
-//            Sheet mostSimilarSheet = findMostSimilarSpreadsheet(currentSheet, sheets);
-            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/" + mostSimilarSheet.getExcelFileName() + "@" + mostSimilarSheet.getSheetName() + ".csv");
+            currentFile = new File(this.inputFileFolder + "/" + mostSimilarSheet.getExcelFileName() + "@" + mostSimilarSheet.getSheetName() + ".csv");
+            System.out.println(currentFile.getPath());
+
             currentSheet = mostSimilarSheet;
         }
 
@@ -723,6 +904,21 @@ public class MainFrame {
             loadFile(currentFile);
         } catch (IOException ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private void resizeColumnWidth(JTable table) {
+        final TableColumnModel columnModel = table.getColumnModel();
+        for (int column = 0; column < table.getColumnCount(); column++) {
+            int width = 20; // Min width
+            for (int row = 0; row < table.getRowCount(); row++) {
+                TableCellRenderer renderer = table.getCellRenderer(row, column);
+                Component comp = table.prepareRenderer(renderer, row, column);
+                width = Math.max(comp.getPreferredSize().width + 1, width);
+            }
+            if (width > 300)
+                width = 300;
+            columnModel.getColumn(column).setPreferredWidth(width);
         }
     }
 }
