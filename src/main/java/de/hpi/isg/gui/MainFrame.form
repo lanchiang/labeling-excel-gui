@@ -347,7 +347,7 @@
                             </constraints>
                             <properties>
                               <enabled value="false"/>
-                              <text value="Subtmit all Results"/>
+                              <text value="Submit all Results"/>
                             </properties>
                           </component>
                           <component id="e55d4" class="javax.swing.JLabel" binding="loadedFileNumberLabel">

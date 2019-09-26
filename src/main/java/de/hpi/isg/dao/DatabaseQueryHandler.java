@@ -29,6 +29,9 @@ public class DatabaseQueryHandler implements AbstractQueries {
     }
 
     public void close() {
+        if (this.databaseConnector == null) {
+            return;
+        }
         try {
             this.databaseConnector.getConnection().close();
         } catch (SQLException e) {

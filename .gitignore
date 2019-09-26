@@ -17,3 +17,6 @@ buildNumber.properties
 
 # output files
 annotation_result.json
+
+# input data folder
+data*/
