@@ -155,7 +155,7 @@ public class MainFrame {
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
 //            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/data/excel-to-csv"));
-            chooser.setCurrentDirectory(new File("."));
+            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/sidescript"));
             chooser.setDialogTitle("Dialog title");
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             chooser.setAcceptAllFileFilterUsed(false);
