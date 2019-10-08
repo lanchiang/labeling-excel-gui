@@ -16,7 +16,7 @@ buildNumber.properties
 *.iml
 
 # output files
-annotation_result.json
+annotation_result*
 
 # input data folder
 data*/

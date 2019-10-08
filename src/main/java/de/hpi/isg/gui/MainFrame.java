@@ -88,6 +88,7 @@ public class MainFrame {
     private JPanel patternOperationPanel;
     private JPanel operatingPanel;
     private JPanel exampleFigurePanel;
+    private JLabel emptyDesc;
 
     private int annotatedFileAmount = 0;
 
@@ -171,6 +172,7 @@ public class MainFrame {
                 loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
 
                 List<File> fileList = Arrays.stream(loadedFiles).filter(file -> !file.getName().equals(".DS_Store")).collect(Collectors.toList());
+                loadedFiles = fileList.toArray(new File[0]);
 
                 final Map<String, List<String>> sheetNamesByFileName = new HashMap<>();
                 fileList.forEach(file -> {
@@ -399,7 +401,7 @@ public class MainFrame {
         panel1.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         menuTab.addTab("Instruction", panel1);
         lineTypeDescriptionPanel = new JPanel();
-        lineTypeDescriptionPanel.setLayout(new GridLayoutManager(6, 2, new Insets(5, 10, 5, 10), -1, -1));
+        lineTypeDescriptionPanel.setLayout(new GridLayoutManager(7, 2, new Insets(5, 10, 5, 10), -1, -1));
         panel1.add(lineTypeDescriptionPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
         lineTypeDescriptionPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Line Type Description"));
         preambleDesc.setText("Preamble");
@@ -432,37 +434,42 @@ public class MainFrame {
         final JLabel label6 = new JLabel();
         label6.setText("A group header is a header of a group of lines in a table. In the example below, the line May (1st line) and June (11st line) are both group header lines.");
         lineTypeDescriptionPanel.add(label6, new GridConstraints(5, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        emptyDesc.setText("Empty");
+        lineTypeDescriptionPanel.add(emptyDesc, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, 16), null, 0, false));
+        final JLabel label7 = new JLabel();
+        label7.setText("A empty line contains no values.");
+        lineTypeDescriptionPanel.add(label7, new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         howToUsePanel = new JPanel();
         howToUsePanel.setLayout(new GridLayoutManager(9, 1, new Insets(5, 10, 5, 10), -1, -1));
         panel1.add(howToUsePanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
         howToUsePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "How to Use"));
-        final JLabel label7 = new JLabel();
-        label7.setText("Click on the \"Line Type Annotation\" tab.");
-        howToUsePanel.add(label7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label8 = new JLabel();
-        label8.setText("Click \"Start Annotation\" to select the input file folder.");
-        howToUsePanel.add(label8, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label8.setText("Click on the \"Line Type Annotation\" tab.");
+        howToUsePanel.add(label8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label9 = new JLabel();
-        label9.setText("In the displayed spreadsheet, you can select a line block and mark it as one of the following six line types plus empty line.");
-        howToUsePanel.add(label9, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label9.setText("Click \"Start Annotation\" to select the input file folder.");
+        howToUsePanel.add(label9, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label10 = new JLabel();
-        label10.setText("The color helps you to determine the line types. The spreadsheet statistics indicate the width and length of this file.");
-        howToUsePanel.add(label10, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label10.setText("In the displayed spreadsheet, you can select a line block and mark it as one of the following six line types plus empty line.");
+        howToUsePanel.add(label10, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label11 = new JLabel();
-        label11.setText("If you think the line type pattern of some consecutive lines can be reused for some other lines.");
-        howToUsePanel.add(label11, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label11.setText("The color helps you to determine the line types. The spreadsheet statistics indicate the width and length of this file.");
+        howToUsePanel.add(label11, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label12 = new JLabel();
-        label12.setText("After finish annotation of this file, click \"Finish annotation\", and \"Next File\" for the next file.");
-        howToUsePanel.add(label12, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label12.setText("If you think the line type pattern of some consecutive lines can be reused for some other lines.");
+        howToUsePanel.add(label12, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label13 = new JLabel();
-        label13.setText("If you think this file is a multi-table file, you don't need to annotate any line. Instead, you just click \"Mark as Multitable File\", and prceed to the next file.");
-        howToUsePanel.add(label13, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label13.setText("After finish annotation of this file, click \"Finish annotation\", and \"Next File\" for the next file.");
+        howToUsePanel.add(label13, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label14 = new JLabel();
-        label14.setText("To mark it, you can either select the line type in the right click menu, or use shortcut key.");
-        howToUsePanel.add(label14, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label14.setText("If you think this file is a multi-table file, you don't need to annotate any line. Instead, you just click \"Mark as Multitable File\", and prceed to the next file.");
+        howToUsePanel.add(label14, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label15 = new JLabel();
-        label15.setText("You can select them, click \"Copy pattern\", and chose the first line where you want to reuse the pattern, and click \"Paste pattern\".");
-        howToUsePanel.add(label15, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label15.setText("To mark it, you can either select the line type in the right click menu, or use shortcut key.");
+        howToUsePanel.add(label15, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label16 = new JLabel();
+        label16.setText("You can select them, click \"Copy pattern\", and chose the first line where you want to reuse the pattern, and click \"Paste pattern\".");
+        howToUsePanel.add(label16, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         exampleFigurePanel = new JPanel();
         exampleFigurePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(exampleFigurePanel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -621,9 +628,9 @@ public class MainFrame {
         numOfColumns = new JLabel();
         numOfColumns.setText("");
         sheetStatPanel.add(numOfColumns, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JLabel label16 = new JLabel();
-        label16.setText("Number of Columns");
-        sheetStatPanel.add(label16, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label17 = new JLabel();
+        label17.setText("Number of Columns");
+        sheetStatPanel.add(label17, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         numOfLines = new JLabel();
         numOfLines.setText("");
         sheetStatPanel.add(numOfLines, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -733,7 +740,9 @@ public class MainFrame {
         groupheaderDesc = new JLabel("Group header (G)");
         groupheaderDesc.setOpaque(true);
         groupheaderDesc.setBackground(ColorSolution.GROUND_HEADER_BACKGROUND_COLOR);
-
+        emptyDesc = new JLabel("Empty (E)");
+        emptyDesc.setOpaque(true);
+        emptyDesc.setBackground(ColorSolution.EMPTY_LINE_BACKGROUND_COLOR);
     }
 
     private void loadFile(final File file) throws IOException {
@@ -912,14 +921,14 @@ public class MainFrame {
     private void resizeColumnWidth(JTable table) {
         final TableColumnModel columnModel = table.getColumnModel();
         for (int column = 0; column < table.getColumnCount(); column++) {
-            int width = 20; // Min width
+            int width = 30; // Min width
             for (int row = 0; row < table.getRowCount(); row++) {
                 TableCellRenderer renderer = table.getCellRenderer(row, column);
                 Component comp = table.prepareRenderer(renderer, row, column);
                 width = Math.max(comp.getPreferredSize().width + 1, width);
             }
-            if (width > 300)
-                width = 300;
+            if (width > 350)
+                width = 350;
             columnModel.getColumn(column).setPreferredWidth(width);
         }
     }
