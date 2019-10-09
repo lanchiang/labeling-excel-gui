@@ -91,12 +91,15 @@ public class MainFrame {
     private JLabel emptyDesc;
     private JTable annotationReviewTable;
     private JScrollPane annotationReviewScrollPane;
+    private JButton returnToCurrentButton;
 
     private int annotatedFileAmount = 0;
 
     private File[] loadedFiles;
 
     private File currentFile;
+
+    private SheetDisplayTableModel currentFileTableModel;
 
     private Sheet currentSheet;
 
@@ -144,6 +147,8 @@ public class MainFrame {
             } else {
                 throw new RuntimeException("There is no sheet being displayed.");
             }
+
+            this.currentFileTableModel = null;
 
 //            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
 
@@ -222,6 +227,10 @@ public class MainFrame {
         ListSelectionModel annotationReviewTableSelectionModel = annotationReviewTable.getSelectionModel();
         annotationReviewTableSelectionModel.addListSelectionListener(e -> {
             if (!annotationReviewTableSelectionModel.isSelectionEmpty()) {
+                if (this.currentFileTableModel == null) {
+                    this.currentFileTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+                }
+
                 int selectedIndex = annotationReviewTableSelectionModel.getMinSelectionIndex();
 
                 DefaultTableModel defaultTableModel = (DefaultTableModel) annotationReviewTable.getModel();
@@ -390,6 +399,17 @@ public class MainFrame {
 
             this.nextFileButton.setEnabled(false);
         });
+        returnToCurrentButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                try {
+                    loadFile(currentFile);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                sheetDisplayTable.setModel(currentFileTableModel);
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -537,7 +557,7 @@ public class MainFrame {
         loadedFileLabel.setText("File Annotated / Loaded:");
         startEndJPanel.add(loadedFileLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, 37), null, 0, false));
         submitPanel = new JPanel();
-        submitPanel.setLayout(new GridLayoutManager(2, 2, new Insets(5, 5, 5, 5), -1, -1));
+        submitPanel.setLayout(new GridLayoutManager(2, 3, new Insets(5, 5, 5, 5), -1, -1));
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 1;
@@ -551,11 +571,14 @@ public class MainFrame {
         finishThisAnnotationButton = new JButton();
         finishThisAnnotationButton.setEnabled(false);
         finishThisAnnotationButton.setText("Finish annotation");
-        submitPanel.add(finishThisAnnotationButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        submitPanel.add(finishThisAnnotationButton, new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         nextFileButton = new JButton();
         nextFileButton.setEnabled(false);
         nextFileButton.setText("Next File");
         submitPanel.add(nextFileButton, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        returnToCurrentButton = new JButton();
+        returnToCurrentButton.setText("Return to Current");
+        submitPanel.add(returnToCurrentButton, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         annotationPanel = new JPanel();
         annotationPanel.setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
@@ -671,7 +694,7 @@ public class MainFrame {
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         annotationPanel.add(annotationReviewScrollPane, gbc);
-        annotationReviewScrollPane.setBorder(BorderFactory.createTitledBorder("Annotation Review"));
+        annotationReviewScrollPane.setBorder(BorderFactory.createTitledBorder("Spreadsheet Annotation Review"));
         annotationReviewTable.setAutoCreateRowSorter(false);
         annotationReviewScrollPane.setViewportView(annotationReviewTable);
         patternOperationPanel = new JPanel();
@@ -728,7 +751,7 @@ public class MainFrame {
     }
 
     private void createUIComponents() {
-        DefaultTableModel tableModel = new DefaultTableModel(new String[]{"Spreadsheet Name"}, 0) {
+        DefaultTableModel tableModel = new DefaultTableModel(0, 1) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -788,6 +811,8 @@ public class MainFrame {
     }
 
     private void loadFile(final File file) throws IOException {
+        System.out.println(file.getName());
+
         CSVReader reader = new CSVReader(new FileReader(file));
         List<String[]> dataEntries = reader.readAll();
 
@@ -904,6 +929,7 @@ public class MainFrame {
 
     /**
      * Store the annotation result of this file in the memory.
+     *
      * @return
      */
     private boolean submitResult() {
@@ -962,8 +988,6 @@ public class MainFrame {
 
         annotatedFileAmount++;
         this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
-
-        System.out.println(currentFile.getName());
 
         try {
             loadFile(currentFile);

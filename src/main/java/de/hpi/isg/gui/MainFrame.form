@@ -338,7 +338,7 @@
                           </component>
                         </children>
                       </grid>
-                      <grid id="7410d" binding="submitPanel" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                      <grid id="7410d" binding="submitPanel" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                         <margin top="5" left="5" bottom="5" right="5"/>
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
@@ -360,7 +360,7 @@
                           </component>
                           <component id="c192b" class="javax.swing.JButton" binding="finishThisAnnotationButton" default-binding="true">
                             <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                              <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <enabled value="false"/>
@@ -374,6 +374,14 @@
                             <properties>
                               <enabled value="false"/>
                               <text value="Next File"/>
+                            </properties>
+                          </component>
+                          <component id="1d0c" class="javax.swing.JButton" binding="returnToCurrentButton" default-binding="true">
+                            <constraints>
+                              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Return to Current"/>
                             </properties>
                           </component>
                         </children>
@@ -609,7 +617,7 @@
                           <maximumSize width="-1" height="500"/>
                           <preferredSize width="-1" height="-1"/>
                         </properties>
-                        <border type="none" title="Annotation Review"/>
+                        <border type="none" title="Spreadsheet Annotation Review"/>
                         <children>
                           <component id="32fa1" class="javax.swing.JTable" binding="annotationReviewTable" custom-create="true">
                             <constraints/>
