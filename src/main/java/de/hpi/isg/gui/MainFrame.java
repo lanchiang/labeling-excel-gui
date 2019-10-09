@@ -89,6 +89,8 @@ public class MainFrame {
     private JPanel operatingPanel;
     private JPanel exampleFigurePanel;
     private JLabel emptyDesc;
+    private JPanel annotationReviewPanel;
+    private JTable annotationReviewTable;
 
     private int annotatedFileAmount = 0;
 
@@ -561,7 +563,7 @@ public class MainFrame {
         gbc.anchor = GridBagConstraints.WEST;
         startEndJPanel.add(loadedFileLabel, gbc);
         annotationPanel = new JPanel();
-        annotationPanel.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
+        annotationPanel.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
         gbc = new GridBagConstraints();
         gbc.gridx = 1;
         gbc.gridy = 0;
@@ -663,6 +665,16 @@ public class MainFrame {
         pastePatternButton.setEnabled(false);
         pastePatternButton.setText("Paste pattern");
         patternOperationPanel.add(pastePatternButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, new Dimension(200, -1), 0, false));
+        annotationReviewPanel = new JPanel();
+        annotationReviewPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        operatingPanel.add(annotationReviewPanel, gbc);
+        annotationReviewPanel.setBorder(BorderFactory.createTitledBorder("Annotation Review"));
+        annotationReviewTable.setAutoCreateRowSorter(false);
+        annotationReviewPanel.add(annotationReviewTable, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         menuTab.addTab("Multitable Annotation", panel3);
@@ -695,6 +707,9 @@ public class MainFrame {
     }
 
     private void createUIComponents() {
+        annotationReviewTable = new JTable(new DefaultTableModel(new String[]{"Spreadsheet Name"}, 0));
+        annotationReviewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
         sheetDisplayTable = new JTable();
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
         JTable rowTable = new RowNumberTable(sheetDisplayTable);
