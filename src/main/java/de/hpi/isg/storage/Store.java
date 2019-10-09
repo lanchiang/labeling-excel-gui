@@ -30,7 +30,7 @@ abstract public class Store {
         features.add(new SheetNameSimilarityFeature());
         features.add(new SheetAmountFeature());
 
-        features.forEach(feature -> feature.score(currentSheet, spreadsheetPool));
+        features.forEach(feature -> feature.score(currentSheet, spreadsheetPool.stream().filter(sheet -> !sheet.isAnnotated()).collect(Collectors.toList())));
 
         Map<Sheet, Double> score = new HashMap<>();
 
@@ -49,10 +49,17 @@ abstract public class Store {
     }
 
     private void removeAnnotatedSheet(Sheet currentSheet) {
-        spreadsheetPool.remove(currentSheet);
+//        spreadsheetPool.remove(currentSheet);
+        Optional<Sheet> optionalSheet = spreadsheetPool.stream().filter(sheet -> sheet.equals(currentSheet)).findFirst();
+        if (!optionalSheet.isPresent()) {
+            throw new RuntimeException("The current sheet is not in the pool.");
+        }
+        optionalSheet.get().setAnnotated(true);
     }
 
     abstract public void addAnnotation(AnnotationResults results);
+
+    abstract public AnnotationResults getAnnotation(String spreadsheetFullName);
 
     public Sheet getSpreadsheet(String excelName, String spreadsheetName) {
         Optional<Sheet> optionalSheet = spreadsheetPool.stream()

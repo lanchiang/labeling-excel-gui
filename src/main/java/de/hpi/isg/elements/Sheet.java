@@ -1,6 +1,7 @@
 package de.hpi.isg.elements;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Objects;
 
@@ -23,6 +24,9 @@ public class Sheet {
      */
     @Getter
     private final int numOfSpreadsheetsOfExcelFile;
+
+    @Getter @Setter
+    private boolean isAnnotated = false;
 
     public Sheet(String sheetName, String excelFileName) {
         this(sheetName, excelFileName, 0);

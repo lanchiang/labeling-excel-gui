@@ -91,7 +91,6 @@ public class MainFrame {
     private JLabel emptyDesc;
     private JTable annotationReviewTable;
     private JScrollPane annotationReviewScrollPane;
-    private JScrollPane annotationReviewScollPane;
 
     private int annotatedFileAmount = 0;
 
@@ -142,7 +141,6 @@ public class MainFrame {
                 if (!submitResult()) {
                     return;
                 }
-//                loadNextFile();
             } else {
                 throw new RuntimeException("There is no sheet being displayed.");
             }
@@ -158,7 +156,6 @@ public class MainFrame {
         });
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
-//            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/data/excel-to-csv"));
             chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/sidescript"));
             chooser.setDialogTitle("Dialog title");
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -168,7 +165,6 @@ public class MainFrame {
             if (choiceCode == JFileChooser.APPROVE_OPTION) {
                 File selectedDir = chooser.getSelectedFile();
                 this.inputFileFolder = chooser.getSelectedFile().getPath();
-//                System.out.println(this.inputFileFolder);
                 loadedFiles = selectedDir.listFiles();
                 assert loadedFiles != null;
 
@@ -220,6 +216,30 @@ public class MainFrame {
                 } else {
                     lineTypeDisplay.setText("n/a");
                 }
+            }
+        });
+
+        ListSelectionModel annotationReviewTableSelectionModel = annotationReviewTable.getSelectionModel();
+        annotationReviewTableSelectionModel.addListSelectionListener(e -> {
+            if (!annotationReviewTableSelectionModel.isSelectionEmpty()) {
+                int selectedIndex = annotationReviewTableSelectionModel.getMinSelectionIndex();
+
+                DefaultTableModel defaultTableModel = (DefaultTableModel) annotationReviewTable.getModel();
+                String fileName = (String) defaultTableModel.getValueAt(selectedIndex, 0);
+
+                try {
+                    loadFile(new File(this.inputFileFolder + "/" + fileName));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+
+                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+                AnnotationResults annotationResults = this.store.getAnnotation(fileName);
+                annotationResults.getAnnotationResults().forEach(result -> {
+                    int lineNumber = result.getLineNumber();
+                    String lineType = result.getType();
+                    sheetDisplayTableModel.setRowsBackgroundColor(lineNumber, lineNumber, ColorSolution.getColor(lineType));
+                });
             }
         });
 
@@ -708,14 +728,14 @@ public class MainFrame {
     }
 
     private void createUIComponents() {
-        annotationReviewTable = new JTable(new DefaultTableModel(new String[]{"Spreadsheet Name"}, 0));
+        DefaultTableModel tableModel = new DefaultTableModel(new String[]{"Spreadsheet Name"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        annotationReviewTable = new JTable(tableModel);
         annotationReviewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        annotationReviewScollPane = new JScrollPane();
-        annotationReviewScollPane.setBorder(BorderFactory.createTitledBorder("Annotation Review"));
-        annotationReviewTable.setAutoCreateRowSorter(false);
-        annotationReviewScollPane.setViewportView(annotationReviewTable);
-        annotationReviewScollPane.setMaximumSize(new Dimension(-1, 200));
 
         sheetDisplayTable = new JTable();
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
@@ -882,11 +902,15 @@ public class MainFrame {
         return lineTypePopupMenu;
     }
 
+    /**
+     * Store the annotation result of this file in the memory.
+     * @return
+     */
     private boolean submitResult() {
         SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
         if (sheetDisplayTableModel.hasUnannotatedLines()) {
             int selectCode = JOptionPane.showConfirmDialog(null,
-                    "Some lines are not annotated yet. Do you want to proceed? Click on \"Yes\" will automatically annotate this lines as empty lines");
+                    "Some lines are not annotated yet. Do you still want to finish it? Click on \"Yes\" will automatically annotate this lines as empty lines");
             if (selectCode != JOptionPane.OK_OPTION) {
                 return false;
             }
@@ -902,7 +926,15 @@ public class MainFrame {
 
         this.store.addAnnotation(results);
 
+        // add a piece to the annotation review table.
+        addToAnnotationReviewTable(currentFile.getName());
+
         return true;
+    }
+
+    private void addToAnnotationReviewTable(String fileName) {
+        DefaultTableModel tableModel = (DefaultTableModel) annotationReviewTable.getModel();
+        tableModel.addRow(new String[]{fileName});
     }
 
     private void loadNextFile() {

@@ -7,9 +7,7 @@ import de.hpi.isg.pojo.AnnotationPojo;
 import de.hpi.isg.pojo.SpreadSheetPojo;
 import lombok.Getter;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Lan Jiang
@@ -20,6 +18,8 @@ public class JsonStore extends Store {
     @Getter
     private final ResultCache<SpreadSheetPojo> resultCache = new ResultCache<>();
 
+    private final Collection<AnnotationResults> resultsInMemory = new HashSet<>();
+
     public JsonStore(List<Sheet> spreadsheetPool) {
         super(spreadsheetPool);
     }
@@ -27,6 +27,22 @@ public class JsonStore extends Store {
     @Override
     public void addAnnotation(AnnotationResults results) {
         resultCache.addResultToCache(convertToResultCacheFormat(results));
+        resultsInMemory.add(results);
+    }
+
+    @Override
+    public AnnotationResults getAnnotation(String spreadsheetFullName) {
+        String[] nameSplits = spreadsheetFullName.split("@");
+        String fileName = nameSplits[0];
+        String sheetName = nameSplits[1].split(".csv")[0];
+        Optional<AnnotationResults> optionalAnnotationResults = resultsInMemory.stream()
+                .filter(annotationResults ->
+                        annotationResults.getSheet().getExcelFileName().equals(fileName) && annotationResults.getSheet().getSheetName().equals(sheetName))
+                .findFirst();
+        if (!optionalAnnotationResults.isPresent()) {
+            throw new RuntimeException("The spreadsheet result is not stored yet.");
+        }
+        return optionalAnnotationResults.get();
     }
 
     private SpreadSheetPojo convertToResultCacheFormat(AnnotationResults annotationResults) {

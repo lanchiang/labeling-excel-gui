@@ -25,4 +25,9 @@ public class RDMBSStore extends Store {
         this.databaseQueryHandler.updateSpreadsheetAnnotationStatus(results.getSheet().getSheetName(), results.getSheet().getExcelFileName());
         this.databaseQueryHandler.insertTimeCost(results, results.getTimeExpense());
     }
+
+    @Override
+    public AnnotationResults getAnnotation(String spreadsheetFullName) {
+        return null;
+    }
 }
