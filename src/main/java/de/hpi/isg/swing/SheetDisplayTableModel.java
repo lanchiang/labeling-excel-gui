@@ -38,6 +38,10 @@ public class SheetDisplayTableModel extends DefaultTableModel {
         return rowColors.get(rowIndex);
     }
 
+    public void setRowColor(int rowIndex, Color color) {
+        rowColors.set(rowIndex, color);
+    }
+
     @Override
     public void insertRow(int row, Object[] rowData) {
         super.insertRow(row, rowData);

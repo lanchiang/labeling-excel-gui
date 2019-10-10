@@ -43,6 +43,7 @@ public class AnnotationResults {
     public void annotate(SheetDisplayTableModel tableModel) {
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             if (tableModel.getRowColor(i).equals(ColorSolution.DEFAULT_BACKGROUND_COLOR)) {
+                tableModel.setRowColor(i, ColorSolution.EMPTY_LINE_BACKGROUND_COLOR);
                 annotationResults.add(new AnnotationResult(i + 1, ColorSolution.getLineType(ColorSolution.EMPTY_LINE_BACKGROUND_COLOR)));
             } else {
                 annotationResults.add(new AnnotationResult(i + 1, ColorSolution.getLineType(tableModel.getRowColor(i))));
