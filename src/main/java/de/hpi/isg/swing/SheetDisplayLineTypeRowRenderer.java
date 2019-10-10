@@ -1,5 +1,7 @@
 package de.hpi.isg.swing;
 
+import de.hpi.isg.utils.ColorSolution;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
@@ -29,7 +31,7 @@ public class SheetDisplayLineTypeRowRenderer implements TableCellRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Component component = DEFAULT_RENDERER.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         if (isSelected) {
-            component.setBackground(Color.BLUE);
+            component.setBackground(Color.LIGHT_GRAY);
             return component;
         }
 

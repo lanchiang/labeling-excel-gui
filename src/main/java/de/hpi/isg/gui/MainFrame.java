@@ -136,13 +136,15 @@ public class MainFrame {
                 JsonWriter<SpreadSheetPojo> writer = new JsonWriter<>();
                 writer.write(((JsonStore) store).getResultCache());
 
+                JOptionPane.showMessageDialog(null, "Annotation results have been saved to the file \"annotation_result.json\"");
+
                 this.queryHandler.close();
             }
         });
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
-            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/sidescript"));
-//            chooser.setCurrentDirectory(new File("."));
+//            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/sidescript"));
+            chooser.setCurrentDirectory(new File("."));
             chooser.setDialogTitle("Dialog title");
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             chooser.setAcceptAllFileFilterUsed(false);
