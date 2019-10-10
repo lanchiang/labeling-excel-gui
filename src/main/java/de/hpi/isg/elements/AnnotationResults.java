@@ -6,6 +6,7 @@ import lombok.Getter;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This class represent an object to store the annotation information of a data file.
@@ -60,5 +61,18 @@ public class AnnotationResults {
             this.lineNumber = lineNumber;
             this.type = type;
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AnnotationResults that = (AnnotationResults) o;
+        return Objects.equals(sheet, that.sheet);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sheet);
     }
 }

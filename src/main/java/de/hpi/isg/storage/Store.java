@@ -43,6 +43,9 @@ abstract public class Store {
                 }
             }
         });
+        if (score.size() == 0) {
+            return null;
+        }
         final Map<Sheet, Double> newScore = score.entrySet().stream().sorted(Map.Entry.<Sheet, Double>comparingByValue().reversed())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
         return newScore.entrySet().iterator().next().getKey();

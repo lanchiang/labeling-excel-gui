@@ -6,5 +6,4 @@ Todo-list:
 * add a table to display the name of annotated tables, selecting a piece of the table should allow to recap its annotation.
 
 * Copy and paste pattern would both need a shortcut.
-* Need a selectable table for reviewing all the annotated files to allow revision.
 * Maybe there is a need to add a new line class.

@@ -26,8 +26,14 @@ public class JsonStore extends Store {
 
     @Override
     public void addAnnotation(AnnotationResults results) {
-        resultCache.addResultToCache(convertToResultCacheFormat(results));
+        resultsInMemory.remove(results);
         resultsInMemory.add(results);
+    }
+
+    public void generateResultCache() {
+        resultsInMemory.forEach(annotationResults -> {
+            resultCache.addResultToCache(convertToResultCacheFormat(annotationResults));
+        });
     }
 
     @Override

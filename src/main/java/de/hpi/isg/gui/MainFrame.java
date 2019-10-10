@@ -44,7 +44,6 @@ public class MainFrame {
     private JLabel startLine;
     private JLabel endLine;
     private JLabel lineTypeDisplay;
-    private JButton finishThisAnnotationButton;
     private JButton submitAllResultButton;
     private JTable sheetDisplayTable;
     private JPanel labelOperatingPanel;
@@ -113,6 +112,8 @@ public class MainFrame {
 
     private String inputFileFolder;
 
+    private String annotationReviewTableSelection;
+
     @Getter
     private DatabaseQueryHandler queryHandler = new DatabaseQueryHandler();
 
@@ -131,37 +132,17 @@ public class MainFrame {
                     }
                 }
 
+                ((JsonStore) store).generateResultCache();
                 JsonWriter<SpreadSheetPojo> writer = new JsonWriter<>();
                 writer.write(((JsonStore) store).getResultCache());
 
                 this.queryHandler.close();
             }
         });
-        finishThisAnnotationButton.addActionListener(e -> {
-            endTime = System.currentTimeMillis();
-            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
-            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                if (!submitResult()) {
-                    return;
-                }
-            } else {
-                throw new RuntimeException("There is no sheet being displayed.");
-            }
-
-            this.currentFileTableModel = null;
-
-//            currentFile = new File("/Users/Fuga/Documents/hpi/data/excel-to-csv/data-gov-uk/mappa-annual-report-13-14-tables.xls@Contents.csv");
-
-            this.submitAsMultitableFileButton.setEnabled(false);
-            this.finishThisAnnotationButton.setEnabled(false);
-
-            this.nextFileButton.setEnabled(true);
-
-            startTime = System.currentTimeMillis();
-        });
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/sidescript"));
+//            chooser.setCurrentDirectory(new File("."));
             chooser.setDialogTitle("Dialog title");
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             chooser.setAcceptAllFileFilterUsed(false);
@@ -194,7 +175,6 @@ public class MainFrame {
                 }));
 
                 submitAsMultitableFileButton.setEnabled(true);
-                finishThisAnnotationButton.setEnabled(true);
                 submitAllResultButton.setEnabled(true);
                 nextFileButton.setEnabled(true);
 
@@ -227,6 +207,7 @@ public class MainFrame {
         ListSelectionModel annotationReviewTableSelectionModel = annotationReviewTable.getSelectionModel();
         annotationReviewTableSelectionModel.addListSelectionListener(e -> {
             if (!annotationReviewTableSelectionModel.isSelectionEmpty()) {
+                this.nextFileButton.setEnabled(false);
                 if (this.currentFileTableModel == null) {
                     this.currentFileTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
                 }
@@ -235,6 +216,7 @@ public class MainFrame {
 
                 DefaultTableModel defaultTableModel = (DefaultTableModel) annotationReviewTable.getModel();
                 String fileName = (String) defaultTableModel.getValueAt(selectedIndex, 0);
+                annotationReviewTableSelection = fileName;
 
                 try {
                     loadFile(new File(this.inputFileFolder + "/" + fileName));
@@ -385,29 +367,60 @@ public class MainFrame {
 
             this.store.addAnnotation(results);
 
-            this.submitAsMultitableFileButton.setEnabled(false);
-            this.finishThisAnnotationButton.setEnabled(false);
-
-            this.nextFileButton.setEnabled(true);
-
             startTime = System.currentTimeMillis();
         });
         nextFileButton.addActionListener(e -> {
-            loadNextFile();
-            this.submitAsMultitableFileButton.setEnabled(true);
-            this.finishThisAnnotationButton.setEnabled(true);
+            // when this button is clicked, first do submit, after that load the next file.
+            endTime = System.currentTimeMillis();
+            DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
+            if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
+                if (!submitResult()) {
+                    return;
+                }
+            } else {
+                throw new RuntimeException("There is no sheet being displayed.");
+            }
 
-            this.nextFileButton.setEnabled(false);
+            this.currentFileTableModel = null;
+
+            loadNextFile();
+
+            startTime = System.currentTimeMillis();
         });
         returnToCurrentButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
+                // first store the change to the reviewed sheet.
+                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+                if (sheetDisplayTableModel.hasUnannotatedLines()) {
+                    int selectCode = JOptionPane.showConfirmDialog(null,
+                            "Some lines are not annotated yet. Do you still want to finish it? Click on \"Yes\" will automatically annotate this lines as empty lines");
+                    if (selectCode != JOptionPane.OK_OPTION) {
+                        return;
+                    }
+                }
+
+                String[] nameSplits = annotationReviewTableSelection.split("@");
+                String fileName = nameSplits[0];
+                String sheetName = nameSplits[1].split(".csv")[0];
+
+                AnnotationResults results = new AnnotationResults(fileName, sheetName, endTime - startTime);
+
+                results.annotate(sheetDisplayTableModel);
+
+                store.addAnnotation(results);
+
+                annotationReviewTable.clearSelection();
                 try {
                     loadFile(currentFile);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
                 sheetDisplayTable.setModel(currentFileTableModel);
+
+                resizeColumnWidth(sheetDisplayTable);
+
+                nextFileButton.setEnabled(true);
             }
         });
     }
@@ -536,49 +549,81 @@ public class MainFrame {
         gbc.fill = GridBagConstraints.VERTICAL;
         operatingPanel.add(loadFilePanel, gbc);
         startEndJPanel = new JPanel();
-        startEndJPanel.setLayout(new GridLayoutManager(2, 2, new Insets(5, 5, 5, 5), -1, -1));
+        startEndJPanel.setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
         loadFilePanel.add(startEndJPanel, gbc);
         startEndJPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null));
         loadAllFilesButton = new JButton();
         loadAllFilesButton.setText("Start Annotation");
-        startEndJPanel.add(loadAllFilesButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        startEndJPanel.add(loadAllFilesButton, gbc);
         submitAllResultButton = new JButton();
         submitAllResultButton.setEnabled(false);
         submitAllResultButton.setText("Submit all Results");
-        startEndJPanel.add(submitAllResultButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        startEndJPanel.add(submitAllResultButton, gbc);
         loadedFileNumberLabel = new JLabel();
         loadedFileNumberLabel.setText("0");
-        startEndJPanel.add(loadedFileNumberLabel, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.weighty = 1.0;
+        startEndJPanel.add(loadedFileNumberLabel, gbc);
         loadedFileLabel = new JLabel();
-        loadedFileLabel.setText("File Annotated / Loaded:");
-        startEndJPanel.add(loadedFileLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, 37), null, 0, false));
+        loadedFileLabel.setText("Annotated / Loaded:");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        startEndJPanel.add(loadedFileLabel, gbc);
         submitPanel = new JPanel();
-        submitPanel.setLayout(new GridLayoutManager(2, 3, new Insets(5, 5, 5, 5), -1, -1));
+        submitPanel.setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(5, 5, 5, 5);
         loadFilePanel.add(submitPanel, gbc);
         submitPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null));
         submitAsMultitableFileButton = new JButton();
         submitAsMultitableFileButton.setEnabled(false);
         submitAsMultitableFileButton.setText("Mark as Multitable File");
-        submitPanel.add(submitAsMultitableFileButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        finishThisAnnotationButton = new JButton();
-        finishThisAnnotationButton.setEnabled(false);
-        finishThisAnnotationButton.setText("Finish annotation");
-        submitPanel.add(finishThisAnnotationButton, new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        submitPanel.add(submitAsMultitableFileButton, gbc);
         nextFileButton = new JButton();
         nextFileButton.setEnabled(false);
         nextFileButton.setText("Next File");
-        submitPanel.add(nextFileButton, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        submitPanel.add(nextFileButton, gbc);
         returnToCurrentButton = new JButton();
         returnToCurrentButton.setText("Return to Current");
-        submitPanel.add(returnToCurrentButton, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        submitPanel.add(returnToCurrentButton, gbc);
         annotationPanel = new JPanel();
         annotationPanel.setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
@@ -589,58 +634,33 @@ public class MainFrame {
         gbc.fill = GridBagConstraints.BOTH;
         operatingPanel.add(annotationPanel, gbc);
         labelOperatingPanel = new JPanel();
-        labelOperatingPanel.setLayout(new GridBagLayout());
+        labelOperatingPanel.setLayout(new GridLayoutManager(3, 2, new Insets(5, 5, 5, 5), -1, -1));
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
         annotationPanel.add(labelOperatingPanel, gbc);
         labelOperatingPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "Block selection", TitledBorder.LEFT, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, -1, -1, labelOperatingPanel.getFont()), new Color(-16777216)));
         startLineLabel = new JLabel();
         startLineLabel.setText("Start Line");
-        gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        labelOperatingPanel.add(startLineLabel, gbc);
-        endLineLabel = new JLabel();
-        endLineLabel.setText("End Line");
-        gbc = new GridBagConstraints();
-        gbc.gridx = 2;
-        gbc.gridy = 0;
-        labelOperatingPanel.add(endLineLabel, gbc);
+        labelOperatingPanel.add(startLineLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         startLine = new JLabel();
         startLine.setText("n/a");
-        gbc = new GridBagConstraints();
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        labelOperatingPanel.add(startLine, gbc);
-        endLine = new JLabel();
-        endLine.setText("n/a");
-        gbc = new GridBagConstraints();
-        gbc.gridx = 3;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        labelOperatingPanel.add(endLine, gbc);
+        labelOperatingPanel.add(startLine, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
         lineTypeLabel = new JLabel();
         lineTypeLabel.setText("Line Function Type");
         lineTypeLabel.setVerticalAlignment(0);
         lineTypeLabel.setVerticalTextPosition(0);
-        gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.gridwidth = 2;
-        gbc.weighty = 1.0;
-        labelOperatingPanel.add(lineTypeLabel, gbc);
+        labelOperatingPanel.add(lineTypeLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(151, 16), null, 1, false));
+        endLineLabel = new JLabel();
+        endLineLabel.setText("End Line");
+        labelOperatingPanel.add(endLineLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        endLine = new JLabel();
+        endLine.setText("n/a");
+        labelOperatingPanel.add(endLine, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
         lineTypeDisplay = new JLabel();
         lineTypeDisplay.setText("n/a");
-        gbc = new GridBagConstraints();
-        gbc.gridx = 2;
-        gbc.gridy = 1;
-        gbc.gridwidth = 2;
-        gbc.weighty = 1.0;
-        labelOperatingPanel.add(lineTypeDisplay, gbc);
+        labelOperatingPanel.add(lineTypeDisplay, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
         colorInstructionPanel = new JPanel();
         colorInstructionPanel.setLayout(new GridLayoutManager(7, 1, new Insets(5, 5, 5, 5), -1, -1));
         gbc = new GridBagConstraints();
@@ -759,6 +779,7 @@ public class MainFrame {
         };
         annotationReviewTable = new JTable(tableModel);
         annotationReviewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        annotationReviewTable.setTableHeader(null);
 
         sheetDisplayTable = new JTable();
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
@@ -980,6 +1001,10 @@ public class MainFrame {
         } else {
             // get the most similar file
             Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
+            if (mostSimilarSheet == null) {
+                System.out.println("No next file. All files have been annotated.");
+                return;
+            }
             currentFile = new File(this.inputFileFolder + "/" + mostSimilarSheet.getExcelFileName() + "@" + mostSimilarSheet.getSheetName() + ".csv");
             System.out.println(currentFile.getPath());
 
