@@ -17,6 +17,7 @@ import de.hpi.isg.swing.RowNumberTable;
 import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 import de.hpi.isg.swing.SheetDisplayTableModel;
 import de.hpi.isg.utils.ColorSolution;
+import de.hpi.isg.utils.GeneralUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -126,34 +127,19 @@ public class MainFrame {
             // write the results into a json file.
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) tableModel;
-//                if (sheetDisplayTableModel.hasUnannotatedLines()) {
-//                    int selectCode = JOptionPane.showConfirmDialog(null,
-//                            "Seems this file has not been annotated. Do you want to anyway finish?");
-//                    if (selectCode != JOptionPane.OK_OPTION) {
-//                        return;
-//                    }
-//                }
-
                 submitResult();
 
                 saveResults();
 
                 this.queryHandler.close();
 
-                this.submitAllResultButton.setEnabled(false);
-                this.submitAsMultitableFileButton.setEnabled(false);
-                this.nextFileButton.setEnabled(false);
-                this.returnToCurrentButton.setEnabled(false);
-                this.copyPatternButton.setEnabled(false);
-                this.pastePatternButton.setEnabled(false);
-                this.loadAllFilesButton.setEnabled(false);
+                disableAllButtons();
             }
         });
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
-            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/sidescript"));
-//            chooser.setCurrentDirectory(new File("."));
+//            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/sidescript"));
+            chooser.setCurrentDirectory(new File("."));
             chooser.setDialogTitle("Dialog title");
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             chooser.setAcceptAllFileFilterUsed(false);
@@ -161,21 +147,21 @@ public class MainFrame {
             int choiceCode = chooser.showOpenDialog(loadAllFilesButton);
             if (choiceCode == JFileChooser.APPROVE_OPTION) {
                 File selectedDir = chooser.getSelectedFile();
-                this.inputFileFolder = chooser.getSelectedFile().getPath();
+                inputFileFolder = chooser.getSelectedFile().getPath();
                 loadedFiles = selectedDir.listFiles();
                 assert loadedFiles != null;
-
                 List<File> fileList = Arrays.stream(loadedFiles).filter(file -> !file.getName().equals(".DS_Store")).collect(Collectors.toList());
                 loadedFiles = fileList.toArray(new File[0]);
 
                 final Map<String, List<String>> sheetNamesByFileName = new HashMap<>();
                 fileList.forEach(file -> {
-                    String[] nameSplits = file.getName().split("@");
-                    String fileName = nameSplits[0];
-                    String sheetName = nameSplits[1].split(".csv")[0];
+//                    String[] nameSplits = file.getName().split("@");
+//                    String fileName = nameSplits[0];
+//                    String sheetName = nameSplits[1].split(".csv")[0];
+                    String[] nameSplits = GeneralUtils.splitFullName(file.getName());
 
-                    sheetNamesByFileName.putIfAbsent(fileName, new LinkedList<>());
-                    sheetNamesByFileName.get(fileName).add(sheetName);
+                    sheetNamesByFileName.putIfAbsent(nameSplits[0], new LinkedList<>());
+                    sheetNamesByFileName.get(nameSplits[0]).add(nameSplits[1]);
                 });
 
                 List<Sheet> sheets = new ArrayList<>();
@@ -202,7 +188,7 @@ public class MainFrame {
                     resultPojo.getSpreadSheetPojos().stream()
                             .filter(spreadSheetPojo -> spreadSheetPojo.getIsMultitableFile().equals("false"))
                             .forEach(spreadSheetPojo -> {
-                                String fullName = spreadSheetPojo.getExcelFileName() + "@" + spreadSheetPojo.getSpreadsheetName() + ".csv";
+                                String fullName = GeneralUtils.createFullName(spreadSheetPojo.getExcelFileName(), spreadSheetPojo.getSpreadsheetName());
                                 addToAnnotationReviewTable(fullName);
 
                                 Optional<AnnotationPojo> optional = spreadSheetPojo.getAnnotationPojos().stream()
@@ -421,11 +407,8 @@ public class MainFrame {
                 return;
             }
 
-            String[] nameSplits = currentFile.getName().split("@");
-            String fileName = nameSplits[0];
-            String sheetName = nameSplits[1].split(".csv")[0];
-
-            AnnotationResults results = new AnnotationResults(fileName, sheetName, endTime - startTime, true);
+            String[] nameSplits = GeneralUtils.splitFullName(currentFile.getName());
+            AnnotationResults results = new AnnotationResults(nameSplits[0], nameSplits[1], endTime - startTime, true);
 
             this.store.addAnnotation(results);
 
@@ -957,11 +940,8 @@ public class MainFrame {
             }
         }
 
-        String[] nameSplits = currentFile.getName().split("@");
-        String fileName = nameSplits[0];
-        String sheetName = nameSplits[1].split(".csv")[0];
-
-        AnnotationResults results = new AnnotationResults(fileName, sheetName, endTime - startTime);
+        String[] nameSplits = GeneralUtils.splitFullName(currentFile.getName());
+        AnnotationResults results = new AnnotationResults(nameSplits[0], nameSplits[1], endTime - startTime, false);
 
         results.annotate(sheetDisplayTableModel);
 
@@ -986,11 +966,9 @@ public class MainFrame {
 
             currentFile = loadedFiles[selectedIndex];
 
-            String[] nameSplits = currentFile.getName().split("@");
-            String fileName = nameSplits[0];
-            String sheetName = nameSplits[1].split(".csv")[0];
+            String[] nameSplits = GeneralUtils.splitFullName(currentFile.getName());
 
-            currentSheet = this.store.getSpreadsheet(fileName, sheetName);
+            currentSheet = this.store.getSpreadsheet(nameSplits[0], nameSplits[1]);
         } else {
             // get the most similar file
             Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
@@ -998,10 +976,13 @@ public class MainFrame {
                 int selectionCode = JOptionPane.showConfirmDialog(null, "No next file. All files have been annotated. Do you want to save all the annotation results now?");
                 if (selectionCode == JOptionPane.OK_OPTION) {
                     saveResults();
+
+                    disableAllButtons();
                 }
                 return;
             }
-            currentFile = new File(this.inputFileFolder + "/" + mostSimilarSheet.getExcelFileName() + "@" + mostSimilarSheet.getSheetName() + ".csv");
+
+            currentFile = new File(this.inputFileFolder + "/" + GeneralUtils.createFullName(mostSimilarSheet.getExcelFileName(), mostSimilarSheet.getSheetName()));
             System.out.println(currentFile.getPath());
 
             currentSheet = mostSimilarSheet;
@@ -1051,11 +1032,9 @@ public class MainFrame {
             }
         }
 
-        String[] nameSplits = annotationReviewTableSelection.split("@");
-        String fileName = nameSplits[0];
-        String sheetName = nameSplits[1].split(".csv")[0];
+        String[] nameSplits = GeneralUtils.splitFullName(annotationReviewTableSelection);
 
-        AnnotationResults results = new AnnotationResults(fileName, sheetName, endTime - startTime);
+        AnnotationResults results = new AnnotationResults(nameSplits[0], nameSplits[1], endTime - startTime);
 
         results.annotate(sheetDisplayTableModel);
 
@@ -1084,5 +1063,15 @@ public class MainFrame {
         annotationReviewTable = new JTable(tableModel);
         annotationReviewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         annotationReviewTable.setTableHeader(null);
+    }
+
+    private void disableAllButtons() {
+        this.submitAllResultButton.setEnabled(false);
+        this.submitAsMultitableFileButton.setEnabled(false);
+        this.nextFileButton.setEnabled(false);
+        this.returnToCurrentButton.setEnabled(false);
+        this.copyPatternButton.setEnabled(false);
+        this.pastePatternButton.setEnabled(false);
+        this.loadAllFilesButton.setEnabled(false);
     }
 }
