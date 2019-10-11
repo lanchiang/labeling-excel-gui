@@ -52,10 +52,11 @@ abstract public class Store {
     }
 
     private void removeAnnotatedSheet(Sheet currentSheet) {
-//        spreadsheetPool.remove(currentSheet);
         Optional<Sheet> optionalSheet = spreadsheetPool.stream().filter(sheet -> sheet.equals(currentSheet)).findFirst();
         if (!optionalSheet.isPresent()) {
-            throw new RuntimeException("The current sheet is not in the pool.");
+//            throw new RuntimeException("The current sheet is not in the pool.");
+            System.out.println("The current sheet is not in the pool");
+            return;
         }
         optionalSheet.get().setAnnotated(true);
     }

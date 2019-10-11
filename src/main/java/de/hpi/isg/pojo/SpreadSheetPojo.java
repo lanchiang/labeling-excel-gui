@@ -3,6 +3,7 @@ package de.hpi.isg.pojo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Collection;
 
@@ -14,24 +15,35 @@ public class SpreadSheetPojo {
 
     @JsonProperty("spreadsheet_name")
     @Getter
-    private final String spreadsheetName;
+    @Setter
+    private String spreadsheetName;
 
     @JsonProperty("excel_file_name")
     @Getter
-    private final String excelFileName;
+    @Setter
+    private String excelFileName;
 
     @JsonProperty("time_expense")
     @Getter
-    private final long timeExpense;
+    @Setter
+    private long timeExpense;
 
     @JsonProperty("is_multitable_file")
     @Getter
-    private final String isMultitableFile;
+    @Setter
+    private String isMultitableFile;
+
+    @JsonProperty("number_of_lines")
+    @Getter @Setter
+    private int numLines;
 
     @JsonProperty("annotations")
     @JacksonXmlElementWrapper(useWrapping = false)
     @Getter
-    private final Collection<AnnotationPojo> annotationPojos;
+    @Setter
+    private Collection<AnnotationPojo> annotationPojos;
+
+    public SpreadSheetPojo() {}
 
     public SpreadSheetPojo(String spreadsheetName, String excelFileName, long timeExpense, boolean isMultitableFile, Collection<AnnotationPojo> annotationPojos) {
         this.spreadsheetName = spreadsheetName;

@@ -4,6 +4,7 @@ import de.hpi.isg.swing.SheetDisplayTableModel;
 import de.hpi.isg.utils.ColorSolution;
 import lombok.Getter;
 
+import java.awt.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -48,6 +49,12 @@ public class AnnotationResults {
             } else {
                 annotationResults.add(new AnnotationResult(i + 1, ColorSolution.getLineType(tableModel.getRowColor(i))));
             }
+        }
+    }
+
+    public void annotate(Color[] colors) {
+        for (int i = 0; i < colors.length; i++) {
+            annotationResults.add(new AnnotationResult(i + 1, ColorSolution.getLineType(colors[i])));
         }
     }
 

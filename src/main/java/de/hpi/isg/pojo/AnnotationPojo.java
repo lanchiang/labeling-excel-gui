@@ -2,6 +2,7 @@ package de.hpi.isg.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author Lan Jiang
@@ -10,16 +11,18 @@ import lombok.Getter;
 public class AnnotationPojo {
 
     @JsonProperty("start_line_number")
-    @Getter
-    private final int startLineNumber;
+    @Getter @Setter
+    private int startLineNumber;
 
     @JsonProperty("end_line_number")
-    @Getter
-    private final int endLineNumber;
+    @Getter @Setter
+    private int endLineNumber;
 
     @JsonProperty("line_type")
-    @Getter
-    private final String lineType;
+    @Getter @Setter
+    private String lineType;
+
+    public AnnotationPojo() {}
 
     public AnnotationPojo(int startLineNumber, int endLineNumber, String lineType) {
         this.startLineNumber = startLineNumber;

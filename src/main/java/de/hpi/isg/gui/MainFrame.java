@@ -6,31 +6,34 @@ import com.opencsv.CSVReader;
 import de.hpi.isg.dao.DatabaseQueryHandler;
 import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.elements.Sheet;
-import de.hpi.isg.features.FileNameSimilarityFeature;
-import de.hpi.isg.features.SheetAmountFeature;
-import de.hpi.isg.features.SheetNameSimilarityFeature;
-import de.hpi.isg.features.SheetSimilarityFeature;
+import de.hpi.isg.json.JsonReader;
 import de.hpi.isg.json.JsonWriter;
+import de.hpi.isg.pojo.AnnotationPojo;
+import de.hpi.isg.pojo.ResultPojo;
 import de.hpi.isg.pojo.SpreadSheetPojo;
-import de.hpi.isg.storage.Store;
 import de.hpi.isg.storage.JsonStore;
-import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
+import de.hpi.isg.storage.Store;
 import de.hpi.isg.swing.RowNumberTable;
+import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 import de.hpi.isg.swing.SheetDisplayTableModel;
 import de.hpi.isg.utils.ColorSolution;
 import lombok.Getter;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.util.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -124,19 +127,27 @@ public class MainFrame {
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
                 SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) tableModel;
-                if (sheetDisplayTableModel.hasUnannotatedLines()) {
-                    int selectCode = JOptionPane.showConfirmDialog(null,
-                            "Seems this file has not been annotated. Do you want to anyway finish?");
-                    if (selectCode != JOptionPane.OK_OPTION) {
-                        return;
-                    }
-                }
+//                if (sheetDisplayTableModel.hasUnannotatedLines()) {
+//                    int selectCode = JOptionPane.showConfirmDialog(null,
+//                            "Seems this file has not been annotated. Do you want to anyway finish?");
+//                    if (selectCode != JOptionPane.OK_OPTION) {
+//                        return;
+//                    }
+//                }
 
                 submitResult();
 
                 saveResults();
 
                 this.queryHandler.close();
+
+                this.submitAllResultButton.setEnabled(false);
+                this.submitAsMultitableFileButton.setEnabled(false);
+                this.nextFileButton.setEnabled(false);
+                this.returnToCurrentButton.setEnabled(false);
+                this.copyPatternButton.setEnabled(false);
+                this.pastePatternButton.setEnabled(false);
+                this.loadAllFilesButton.setEnabled(false);
             }
         });
         loadAllFilesButton.addActionListener(e -> {
@@ -153,8 +164,6 @@ public class MainFrame {
                 this.inputFileFolder = chooser.getSelectedFile().getPath();
                 loadedFiles = selectedDir.listFiles();
                 assert loadedFiles != null;
-
-                loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
 
                 List<File> fileList = Arrays.stream(loadedFiles).filter(file -> !file.getName().equals(".DS_Store")).collect(Collectors.toList());
                 loadedFiles = fileList.toArray(new File[0]);
@@ -173,13 +182,63 @@ public class MainFrame {
                 sheetNamesByFileName.forEach((key, value) -> value.forEach(sheetList -> {
                     sheets.add(new Sheet(sheetList, key, value.size()));
                 }));
+                store = new JsonStore(sheets);
+
+                JsonReader jsonReader = new JsonReader();
+                ResultPojo resultPojo = null;
+                try {
+                    resultPojo = jsonReader.read();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+
+                if (resultPojo != null) {
+                    annotatedFileAmount = resultPojo.getSpreadSheetPojos().size();
+                    if (annotatedFileAmount == loadedFiles.length) {
+                        JOptionPane.showMessageDialog(null, "You have annotated all the data");
+                        return;
+                    }
+
+                    resultPojo.getSpreadSheetPojos().stream()
+                            .filter(spreadSheetPojo -> spreadSheetPojo.getIsMultitableFile().equals("false"))
+                            .forEach(spreadSheetPojo -> {
+                                String fullName = spreadSheetPojo.getExcelFileName() + "@" + spreadSheetPojo.getSpreadsheetName() + ".csv";
+                                addToAnnotationReviewTable(fullName);
+
+                                Optional<AnnotationPojo> optional = spreadSheetPojo.getAnnotationPojos().stream()
+                                        .max(Comparator.comparingInt(AnnotationPojo::getEndLineNumber));
+                                if (!optional.isPresent()) {
+                                    throw new RuntimeException("The row count can not be obtained.");
+                                }
+                                int rowCount = optional.get().getEndLineNumber();
+                                Color[] colors = new Color[rowCount];
+                                spreadSheetPojo.getAnnotationPojos().forEach(annotationPojo -> {
+                                    int start = annotationPojo.getStartLineNumber();
+                                    int end = annotationPojo.getEndLineNumber();
+                                    String lineType = annotationPojo.getLineType();
+                                    for (int i = start; i <= end; i++) {
+                                        colors[i - 1] = ColorSolution.getColor(lineType);
+                                    }
+                                });
+
+                                AnnotationResults annotationResults = new AnnotationResults(
+                                        spreadSheetPojo.getExcelFileName(),
+                                        spreadSheetPojo.getSpreadsheetName(),
+                                        spreadSheetPojo.getTimeExpense());
+                                annotationResults.annotate(colors);
+                                this.store.getSpreadsheet(spreadSheetPojo.getExcelFileName(), spreadSheetPojo.getSpreadsheetName()).setAnnotated(true);
+                                this.store.addAnnotation(annotationResults);
+                                this.currentFile = new File(this.inputFileFolder + "/" + fullName);
+                                this.currentSheet = this.store.getSpreadsheet(spreadSheetPojo.getExcelFileName(), spreadSheetPojo.getSpreadsheetName());
+                            });
+                }
+                loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
 
                 submitAsMultitableFileButton.setEnabled(true);
                 submitAllResultButton.setEnabled(true);
                 nextFileButton.setEnabled(true);
 
 //                store = new RDMBSStore(null, this.queryHandler);
-                store = new JsonStore(sheets);
 
                 loadNextFile();
                 startTime = System.currentTimeMillis();
@@ -738,15 +797,7 @@ public class MainFrame {
     }
 
     private void createUIComponents() {
-        DefaultTableModel tableModel = new DefaultTableModel(0, 1) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        annotationReviewTable = new JTable(tableModel);
-        annotationReviewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        annotationReviewTable.setTableHeader(null);
+        resetReviewTable();
 
         sheetDisplayTable = new JTable();
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
@@ -829,30 +880,6 @@ public class MainFrame {
         System.out.println(tableModel.getColumnCount() + "\t" + tableModel.getRowCount());
     }
 
-    private Sheet findMostSimilarSpreadsheet(Sheet current, List<Sheet> candidates) {
-        Set<SheetSimilarityFeature> features = new HashSet<>();
-        features.add(new FileNameSimilarityFeature());
-        features.add(new SheetNameSimilarityFeature());
-        features.add(new SheetAmountFeature());
-
-        features.forEach(feature -> feature.score(current, candidates));
-
-        Map<Sheet, Double> score = new HashMap<>();
-
-        features.stream().map(SheetSimilarityFeature::getScoreMap).forEach(map -> {
-            for (Map.Entry<Sheet, Double> entry : map.entrySet()) {
-                if (!score.containsKey(entry.getKey())) {
-                    score.put(entry.getKey(), entry.getValue());
-                } else {
-                    score.put(entry.getKey(), score.get(entry.getKey()) + entry.getValue());
-                }
-            }
-        });
-        final Map<Sheet, Double> newScore = score.entrySet().stream().sorted(Map.Entry.<Sheet, Double>comparingByValue().reversed())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-        return newScore.entrySet().iterator().next().getKey();
-    }
-
     private JPopupMenu getLineTypePopupMenu() {
         AtomicInteger startIndex = new AtomicInteger();
         AtomicInteger endIndex = new AtomicInteger();
@@ -924,7 +951,7 @@ public class MainFrame {
         SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
         if (sheetDisplayTableModel.hasUnannotatedLines()) {
             int selectCode = JOptionPane.showConfirmDialog(null,
-                    "Some lines are not annotated yet. Do you still want to finish it? Click on \"Yes\" will automatically annotate this lines as empty lines");
+                    "Some lines of this file are not annotated yet. Do you still want to finish it? Click on \"Yes\" will automatically annotate this lines as empty lines");
             if (selectCode != JOptionPane.OK_OPTION) {
                 return false;
             }
@@ -964,7 +991,6 @@ public class MainFrame {
             String sheetName = nameSplits[1].split(".csv")[0];
 
             currentSheet = this.store.getSpreadsheet(fileName, sheetName);
-
         } else {
             // get the most similar file
             Sheet mostSimilarSheet = store.findMostSimilarSheet(currentSheet);
@@ -1046,5 +1072,17 @@ public class MainFrame {
         resizeColumnWidth(sheetDisplayTable);
 
         nextFileButton.setEnabled(true);
+    }
+
+    private void resetReviewTable() {
+        DefaultTableModel tableModel = new DefaultTableModel(0, 1) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        annotationReviewTable = new JTable(tableModel);
+        annotationReviewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        annotationReviewTable.setTableHeader(null);
     }
 }

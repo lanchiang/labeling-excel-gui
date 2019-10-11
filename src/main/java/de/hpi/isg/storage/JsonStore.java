@@ -18,7 +18,7 @@ public class JsonStore extends Store {
     @Getter
     private final ResultCache<SpreadSheetPojo> resultCache = new ResultCache<>();
 
-    private final Collection<AnnotationResults> resultsInMemory = new HashSet<>();
+    private final Collection<AnnotationResults> resultsInMemory = new LinkedList<>();
 
     public JsonStore(List<Sheet> spreadsheetPool) {
         super(spreadsheetPool);

@@ -98,9 +98,7 @@ public class RowNumberTable extends JTable
      */
     @Override
     public void setValueAt(Object value, int row, int column) {}
-    //
-//  Implement the ChangeListener
-//
+
     public void stateChanged(ChangeEvent e)
     {
         //  Keep the scrolling of the row table in sync with main table
@@ -109,9 +107,7 @@ public class RowNumberTable extends JTable
         JScrollPane scrollPane = (JScrollPane)viewport.getParent();
         scrollPane.getVerticalScrollBar().setValue(viewport.getViewPosition().y);
     }
-    //
-//  Implement the PropertyChangeListener
-//
+
     public void propertyChange(PropertyChangeEvent e)
     {
         //  Keep the row table in sync with the main table
@@ -133,9 +129,6 @@ public class RowNumberTable extends JTable
         }
     }
 
-    //
-//  Implement the TableModelListener
-//
     @Override
     public void tableChanged(TableModelEvent e)
     {
