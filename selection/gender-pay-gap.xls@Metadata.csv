@@ -1,0 +1,25 @@
+Name,Gender Pay Gap from the Annual Survey of Hours and Earnings
+ShortName,Gender Pay Gap
+Theme,Employment and Skills
+Sub-theme,Income and earnings
+Title,Gender Pay Gap
+Description,The difference between men's and women's hourly earnings as a percentage of men's earnings.
+Subject,Earnings
+Subject.keyword,"income, earnings, pay, salary, economic fairness, sex"
+Publisher,NOMIS
+Date.available,1997-2018
+Creator,"Annual Survey of Hours and Earnings (ASHE), ONS"
+Date.created,Nov-18
+Coverage.spatial,London & UK
+Coverage.temporal,Annual
+Type,Survey
+Language,English
+Rights,Crown Copyright
+More info,https://data.london.gov.uk/economic-fairness/labour-market/gender-pay-gap/
+Download from,https://www.nomisweb.co.uk/
+Measure,Hourly Pay
+Warnings/Notes,Gender pay gap is calculated as the difference between average hourly earnings (excluding overtime) of men and women as a proportion of average hourly earnings (excluding overtime) of men
+,"ASHE covers employee jobs in the United Kingdom. It does not cover the self-employed, nor does it cover employees not paid during the reference period."
+,"Estimates are provided for the pay period that included a specified date in April. They relate to employees on adult rates of pay, whose earnings for the survey pay period were not affected by absence."
+,Workplace based
+,2018 figures are provisional

@@ -1,0 +1,70 @@
+Table D17: Summary of asylum outcomes for minor cases ,,,,,,,
+,,,,,,,
+ELAP Quantitative Measure,Minor (Baseline),,Minor (During ELAP),,Change,,
+,MEE     (A),Control (B),MEE     (C) ,Control (D),"Change MEE/ ELAP
+(E) = (C-A)","Change Control 
+(F) = (D-B)","Difference in Difference 
+(G) = (E-F)"
+Initial outcomes (funded cases),,,,,,,
+Number of cases,275,986,157,973,,,
+   Grant Asylum Rate,21%,14%,37%,20%,16%,6%,10%
+   Grant DL Rate,51%,50%,38%,45%,-12%,-5%,-7%
+   Grant HP Rate,1%,1%,1%,-,-,-,-
+   Refusal Rate,24%,32%,22%,32%,-2%,1%,-3%
+   Withdrawn-absconder rate,2%,3%,1%,1%,-1%,-2%,1%
+   Withdrawn-other rate,1%,1%,-,1%,-1%,-,-1%
+   Other,-,1%,1%,1%,1%,1%,-
+Days to Interview*,59,41,68,38,9,-3,12
+Days to initial decision served*,89,79,120,60,31,-19,50
+% served in 30 days,3%,10%,1%,12%,-2%,2%,-4%
+% served in 60 days,13%,33%,11%,47%,-2%,14%,-16%
+Appeal outcomes,,,,,,,
+"Initial appeal rate (against refusals)
+Total cases
+%",66,312,34,313,,,
+,92%,93%,91%,90%,-1%,-3%,2%
+"Initial appeal rate (against intake)
+Total cases
+%",275,986,157,973,,,
+,39%,45%,36%,46%,-4%,1%,-5%
+"   LSC funded appeal rate
+Total cases
+%",108,448,56,451,,,
+,117%,97%,91%,86%,-26%,-11%,-14%
+"   Allowed appeal rate
+Total cases
+%",108,448,56,451,,,
+,27%,32%,29%,30%,2%,-2%,4%
+"   Allowed appeal rate (LSC funded)
+Total cases
+%",39,174,23,168,,,
+,23%,34%,35%,37%,12%,2%,9%
+"Onward appeal rate
+Total cases
+%",108,448,56,451,,,
+,27%,17%,16%,15%,-11%,-2%,-9%
+"   LSC Funded onward appeal rate
+Total cases
+%",29,74,9,67,,,
+,76%,58%,56%,66%,-20%,8%,-28%
+Days to appeal outcome*,79,64,57,66,-22,2,-24
+"Overall Grant Rate
+Total cases
+%",275,986,157,973,,,
+,77%,72%,79%,73%,2%,1%,1%
+Conclusion outcomes,,,,,,,
+Number of cases,275,986,157,973,,,
+Case conclusion rate,88%,82%,85%,79%,-3%,-4%,1%
+Days to conclusion*,105,113,124.5,77,19.5,-36,55.5
+% concluded in 6 months,72%,65%,63%,64%,-9%,-,-9%
+% concluded in 12 months,79%,73%,80%,76%,1%,3%,-2%
+Removal rates – enforced,7%,6%,5%,3%,-1%,-2%,1%
+% removed in 6 months,-,1%,3%,1%,2%,-,2%
+% removed in 12 months,3%,2%,4%,3%,1%,1%,1%
+Removal rates – AVR/voluntary,6%,5%,4%,3%,-1%,-2%,1%
+Cost outcomes,,,,,,,
+Median legal help costs (£),"1,173","1,094","1,207","1,234",34,140,-106
+Median CLR costs at appeal (£),"1,600","1,549","1,561","1,511",-39,-38,-1
+Note DID totals may not always equal the exact difference between the ‘Change MEE’ and ‘Change other’ columns due to rounding.,,,,,,,
+All figures for days represent medians as averages may be skewed by outlier cases,,,,,,,
+"Source: UK Border Agency and LSC matched dataset, December 2012",,,,,,,

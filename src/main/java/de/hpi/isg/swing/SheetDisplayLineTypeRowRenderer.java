@@ -16,7 +16,7 @@ public class SheetDisplayLineTypeRowRenderer implements TableCellRenderer {
 
     private static final DefaultTableCellRenderer DEFAULT_RENDERER = new DefaultTableCellRenderer();
 
-    public static final int OPACITY_PARAMETER = 64;
+    public static final int OPACITY_PARAMETER = 92;
 
     private final int rowCount;
 

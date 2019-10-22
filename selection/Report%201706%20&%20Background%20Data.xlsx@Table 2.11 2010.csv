@@ -1,0 +1,21 @@
+"Table 2.11 Car, Goods and All KSI Vehicle Accident Rates on B Roads - 2010",,,,,,,
+District,Road Length KM,Car KSI Accidents,Accident Rate Per 100 Million Car Km,Goods KSI Accidents,Accident Rate Per 100 Million Goods Km,All KSI Accidents,Accident Rate Per 100 Million Vehicle Km
+Bolton,46,16,11,2,11,21,13
+Bury,33,5,6,1,10,5,5
+Manchester,36,12,9,2,13,17,10
+Oldham,30,4,5,1,9,7,8
+Rochdale,24,5,6,0,0,5,5
+Salford,29,9,9,0,0,10,9
+Stockport,36,3,2,0,0,3,2
+Tameside,32,6,6,0,0,7,6
+Trafford,52,4,2,2,11,6,3
+Wigan,56,11,6,0,0,13,6
+Greater Manchester,375,75,6,8,5,94,7
+Notes:,,,,,,,
+1.     Accident rates per 100 million vehicle kilometres are derived from figures quoted in the GMTU Report 1654,,,,,,,
+         ' Transport Statistics Greater Manchester 2010'.,,,,,,,
+2.     KSI = Killed and Seriously Injured.,,,,,,,
+"3.     Some 'car' accidents may also involve 'goods' and vice-versa. Thus, there may be fewer 'all vehicle' accidents",,,,,,,
+        than the total of 'car' and 'goods' accidents.,,,,,,,
+,,,,,,,
+List of Tables in this Workbook,,,,,,,

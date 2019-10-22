@@ -1,0 +1,175 @@
+This data is provided from the London Development Database and reflects the data as entered to the system on 23/06/2017
+"*** Query Name:Resi Scheme level ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 3,871
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Date, Permission Status, Permission Type Code, Permission Type, Site Name/Number, Primary Street Name, Secondary Street(s), Post Code, Ward, Completed Date, Decision Agency Code, Decision Agency, Development Description, Started Date, Proposed Residential Parking Spaces, Residential Site Area (Proposed), Prop Cash in Lieu Affordable Hous.., Proposed Total Affordable Percentage, Proposed Total Affordable Units, Proposed Total Residential Units, Existing Total Residential Units, Easting, Northing, Proposed Lifetime Homes, Proposed Wheelchair Acc Homes, Completed Financial Year, UPRN, GIS01 Value, GIS11 Value, Proposed Non Residential (Yes/No), Polygon Available (Y/N), CSH Level 0, CSH Level 1, CSH Level 2, CSH Level 3, CSH Level 4, CSH Level 5, CSH Level 6, Total Site Area (Proposed), Scheme Name, Existing Total Floorspace, Existing Total Bedrooms, Proposed Total Floorspace, Proposed Total Bedrooms, Building height (storeys), Proposed Residential Density, Development Type, Permission ID
+       Filters (    Planning Authority In List { }
+                AND  Permission Status In List {  Completed; Lapsed; Started; Submitted; Superseded }
+                AND  Completed Date Between {01/04/2015 } AND {31/03/2016 }
+                AND   (    Existing Total Residential Units Greater than or Equal to 1
+                       OR  Proposed Total Residential Units Greater than or Equal to 1
+                      )
+                AND  Permission Type In List {Circular 18/84;Details/Reserve Matters;Full;Outline;S191 Certificate of Existing Lawful Use;S73 Minor Material Amendment;Variation to S106;Prior Approval (Class O - formerly J);Prior Approval (Class G - formerly F);Prior Approval (Class N);Prior Approval (Class K);S192 Certificate of Proposed Lawful Development;Prior Approval (Class M - formerly IA);Prior Approval (Class Q - formerly MB);Prior Approval (Class P);Prior Approval (Class T - formerly K) }
+               )
+
+*** Query Name:Unit level ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 8,980
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Status, Decision Agency, Development Description, Site Name/Number, Primary Street Name, Secondary Street(s), Post Code, Ward, Easting, Northing, Permission Date, Started Date, Completed Date (Res), No of Existing Units, No of Proposed Units, Designation, Unit Type, Unit Tenure Type, Plot Description, Residential Development Type, Unit Provider, Affordable (Y/N), Multiple Occupancy (Y/N), Sheltered (Y/N), No of Bedrooms, Completed Financial Year (Res), GIS01 Value, GIS11 Value, Proposed Non Residential (Yes/No), Garden Land (Y\N), Greenfield (Y\N), Polygon Available (Y/N), Total Site Area (Proposed), Scheme Name, Residential Site Area (Proposed), Non Res Site Area (Proposed), Existing Total Floorspace, Existing Total Bedrooms, Proposed Total Floorspace, Proposed Total Bedrooms, Proposed Total Residential Units, Building height (storeys), Permission ID
+       Filters (    Planning Authority In List { }
+                AND  Permission Status In List {  Completed; Started; Superseded }
+                AND  Completed Date (Res) Between {01/04/2015 00:00:00 } AND {31/03/2016 00:00:00 }
+                AND   (    No of Existing Units Greater than or Equal to 1
+                       OR  No of Proposed Units Greater than or Equal to 1
+                      )
+                AND  Permission Type In List {Circular 18/84;Details/Reserve Matters;Full;Outline;S191 Certificate of Existing Lawful Use;S73 Minor Material Amendment;Variation to S106;Prior Approval (Class O - formerly J);Prior Approval (Class G - formerly F);Prior Approval (Class N);Prior Approval (Class K);S192 Certificate of Proposed Lawful Development;Prior Approval (Class M - formerly IA);Prior Approval (Class Q - formerly MB);Prior Approval (Class P);Prior Approval (Class T - formerly K) }
+               )
+
+*** Query Name:Temporaries ending ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 0
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Type Code, Existing Total Residential Units, Proposed Total Residential Units, Site Name/Number, Subdivision of Building, Primary Street Name, Secondary Street(s), Post Code, Easting, Northing, Ward, Completed Date, Lapsed Date, Development Description, Permission Type, Net Residential Gain, Permission Status
+       Filters (    Planning Authority In List { }
+                AND  Permission Type Code Equal T
+                AND  Lapsed Date Between {01/04/2015 } AND {31/03/2016 }
+                AND  Permission Status Equal Completed
+                AND   (    Existing Total Residential Units Greater than or Equal to 1
+                       OR  Proposed Total Residential Units Greater than or Equal to 1
+                      )
+                AND  Permission Status In List {  Started; Completed }
+                AND  Permission Type In List {Circular 18/84;Details/Reserve Matters;Full;Outline;S191 Certificate of Existing Lawful Use;S73 Minor Material Amendment;Variation to S106;Prior Approval (Class O - formerly J);Prior Approval (Class G - formerly F);Prior Approval (Class N);Prior Approval (Class K);S192 Certificate of Proposed Lawful Development;Prior Approval (Class M - formerly IA);Prior Approval (Class Q - formerly MB);Prior Approval (Class P);Prior Approval (Class T - formerly K) }
+               )
+
+*** Query Name:C1 exist ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 1
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Status, Development Description, Existing C1 Hall Bedrooms, Completed Date, Site Name/Number, Primary Street Name, Secondary Street(s), Post Code, Easting, Northing, Ward, Completed Financial Year, Scheme Name, Subdivision of Building, Inner or Outer, Polygon Available (Y/N), Total Site Area (Proposed), Building height (storeys), Existing C1 Units, Permission ID, Development Type
+       Filters (    Planning Authority In List { }
+                AND   (    Existing C1 Hall Bedrooms Greater than or Equal to 7
+                       AND  Completed Date Between {01/04/2015 } AND {31/03/2016 }
+                      )
+                AND  Permission Status In List {  Completed; Started }
+               )
+
+*** Query Name:C2 exist ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 28
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Status, Development Description, Completed Date, Site Name/Number, Primary Street Name, Secondary Street(s), Post Code, Easting, Northing, Ward, Existing C2 Bedrooms, Completed Financial Year, Scheme Name, Subdivision of Building, Inner or Outer, Polygon Available (Y/N), Total Site Area (Proposed), Building height (storeys), Existing C2 Units, Permission ID, Development Type
+       Filters (    Planning Authority In List { }
+                AND   (    Existing C2 Bedrooms Greater than or Equal to 7
+                       AND  Completed Date Between {01/04/2015 } AND {31/03/2016 }
+                      )
+                AND  Permission Status In List {  Completed; Started }
+                AND  Permission Type In List {Circular 18/84;Details/Reserve Matters;Full;Outline;S191 Certificate of Existing Lawful Use;S73 Minor Material Amendment;Variation to S106;Prior Approval (Class O - formerly J);Prior Approval (Class G - formerly F);Prior Approval (Class N);Prior Approval (Class K);S192 Certificate of Proposed Lawful Development;Prior Approval (Class M - formerly IA);Prior Approval (Class Q - formerly MB);Prior Approval (Class P);Prior Approval (Class T - formerly K) }
+               )
+
+*** Query Name:SG exist ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 39
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Status, Development Description, Existing SG Bedrooms, Completed Date, Site Name/Number, Primary Street Name, Secondary Street(s), Post Code, Easting, Northing, Ward, Completed Financial Year, Scheme Name, Subdivision of Building, Inner or Outer, Polygon Available (Y/N), Total Site Area (Proposed), Building height (storeys), Existing SG Units, Permission ID, Development Type
+       Filters (    Planning Authority In List { }
+                AND   (    Existing SG Bedrooms Greater than or Equal to 7
+                       AND  Completed Date Between {01/04/2015 } AND {31/03/2016 }
+                      )
+                AND  Permission Status In List {  Completed; Started }
+                AND  Permission Type In List {Circular 18/84;Details/Reserve Matters;Full;Outline;S191 Certificate of Existing Lawful Use;S73 Minor Material Amendment;Variation to S106;Prior Approval (Class O - formerly J);Prior Approval (Class G - formerly F);Prior Approval (Class N);Prior Approval (Class K);S192 Certificate of Proposed Lawful Development;Prior Approval (Class M - formerly IA);Prior Approval (Class Q - formerly MB);Prior Approval (Class P);Prior Approval (Class T - formerly K) }
+               )
+
+*** Query Name:C1 proposed ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 17
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Status, Development Description, Completed Date, Proposed C1 Hall Bedrooms, C1/SG Hall Completed Date, Site Name/Number, Primary Street Name, Secondary Street(s), Post Code, Easting, Northing, Ward, C1/SG Hall Completed FY, Scheme Name, Subdivision of Building, Inner or Outer, Polygon Available (Y/N), Total Site Area (Proposed), Building height (storeys), Proposed C1 Units, Permission ID, Development Type
+       Filters (    Planning Authority In List { }
+                AND   (    Proposed C1 Hall Bedrooms Greater than or Equal to 7
+                       AND  C1/SG Hall Completed Date Between {01/04/2015 } AND {31/03/2016 }
+                      )
+                AND  Permission Status In List {  Completed; Started }
+                AND  Permission Type In List {Circular 18/84;Details/Reserve Matters;Full;Outline;S191 Certificate of Existing Lawful Use;S73 Minor Material Amendment;Variation to S106;Prior Approval (Class O - formerly J);Prior Approval (Class G - formerly F);Prior Approval (Class N);Prior Approval (Class K);S192 Certificate of Proposed Lawful Development;Prior Approval (Class M - formerly IA);Prior Approval (Class Q - formerly MB);Prior Approval (Class P);Prior Approval (Class T - formerly K) }
+               )
+
+*** Query Name:C2 proposed ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 9
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Status, Development Description, Completed Date, Site Name/Number, Primary Street Name, Secondary Street(s), Post Code, Easting, Northing, Ward, C2 Bedrooms Completed Date, C2 Bedrooms Completed FY, Proposed C2 Bedrooms, Scheme Name, Subdivision of Building, Polygon Available (Y/N), Inner or Outer, Total Site Area (Proposed), Building height (storeys), Proposed C2 Units, Permission ID, Development Type
+       Filters (    Planning Authority In List { }
+                AND   (    Proposed C2 Bedrooms Greater than or Equal to 7
+                       AND  C2 Bedrooms Completed Date Between {01/04/2015 } AND {31/03/2016 }
+                      )
+                AND  Permission Status In List {  Completed; Started }
+                AND  Permission Type In List {Circular 18/84;Details/Reserve Matters;Full;Outline;S191 Certificate of Existing Lawful Use;S73 Minor Material Amendment;Variation to S106;Prior Approval (Class O - formerly J);Prior Approval (Class G - formerly F);Prior Approval (Class N);Prior Approval (Class K);S192 Certificate of Proposed Lawful Development;Prior Approval (Class M - formerly IA);Prior Approval (Class Q - formerly MB);Prior Approval (Class P);Prior Approval (Class T - formerly K) }
+               )
+
+*** Query Name:SG proposed ***
+
+    ** Query Properties:
+       Universe:LDD Universe
+       Last Refresh Date:23/06/2017 17:01
+       Last Execution Duration: 1
+       Number of rows: 19
+       Retrieve Duplicate Row: ON
+    
+    ** Query Definition:
+       Result Objects: Borough, Planning Authority, Borough Reference, Permission Status, Development Description, Completed Date, Proposed SG Bedrooms, SG Beds Completed Date, Site Name/Number, Primary Street Name, Secondary Street(s), Post Code, Easting, Northing, Ward, SG Beds Completed FY, Scheme Name, Subdivision of Building, Inner or Outer, Polygon Available (Y/N), Total Site Area (Proposed), Building height (storeys), Proposed SG Units, Permission ID, Development Type
+       Filters (    Planning Authority In List { }
+                AND   (    Proposed SG Bedrooms Greater than or Equal to 7
+                       AND  SG Beds Completed Date Between {01/04/2015 } AND {31/03/2016 }
+                      )
+                AND  Permission Status In List {  Completed; Started }
+                AND  Permission Type In List {Circular 18/84;Details/Reserve Matters;Full;Outline;S191 Certificate of Existing Lawful Use;S73 Minor Material Amendment;Variation to S106;Prior Approval (Class O - formerly J);Prior Approval (Class G - formerly F);Prior Approval (Class N);Prior Approval (Class K);S192 Certificate of Proposed Lawful Development;Prior Approval (Class M - formerly IA);Prior Approval (Class Q - formerly MB);Prior Approval (Class P);Prior Approval (Class T - formerly K) }
+               )"

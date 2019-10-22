@@ -1,0 +1,18 @@
+DAT,5-Feb-13,,,,,,,,,,
+JH,Employer Perspectives 2012,,,,,,,,,,
+TI,,,,,,,,,,,
+TID,Table 25/ 1,,,,,,,,,,
+TI,,,,,,,,,,,
+VT,C6A - Whether have recruited anyone in the past year,,,,,,,,,,
+BT,,,,,,,,,,,
+BT,Base: All establishments with vacancies in last 12 months,,,,,,,,,,
+COL1,,,Region (ONS),,,,,,,,
+COL,,Total,East Midlands,East of England,London,North East,North West,South East,South West,West Midlands,Yorkshire and the Humber
+UNR,Unweighted bases:,6486,568,824,943,274,708,1206,788,564,611
+PTR,Weighted bases:,692978,56773,86204,102949,30836,73537,130801,88154,60798,62927
+PRC,Yes,628802,52300,78853,*90105,27654,66950,*121383,*81814,*51659,58085
+RTV,,91%,92%,91%,88%,90%,91%,93%,93%,85%,92%
+PRC,No,62759,4304,7206,*12398,3080,6488,*9153,6340,*8971,4819
+RTV,,9%,8%,8%,12%,10%,9%,7%,7%,15%,8%
+PRC,Don't know,1417,169,145,447,102,98,265,0,167,23
+RTV,,*%,*%,*%,*%,*%,*%,*%,0%,*%,*%

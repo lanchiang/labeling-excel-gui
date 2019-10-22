@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * This class represent an object to store the annotation information of a data file.
+ * An instance of this class stores the annotation information of a data file.
  *
  * @author Lan Jiang
  * @since 9/3/19

@@ -195,7 +195,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <icon value="grouptitle-example.png"/>
+                      <icon value="Screen Shot 2019-10-18 at 9.40.51 AM.png"/>
                       <text value=""/>
                     </properties>
                   </component>
@@ -287,7 +287,7 @@
                           <color color="-16777216"/>
                         </border>
                         <children>
-                          <component id="bace0" class="javax.swing.JButton" binding="submitAsMultitableFileButton" default-binding="true">
+                          <component id="bace0" class="javax.swing.JButton" binding="markAsMultitableButton" default-binding="true">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                               <gridbag weightx="1.0" weighty="1.0"/>

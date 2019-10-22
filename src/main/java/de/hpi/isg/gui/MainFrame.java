@@ -75,7 +75,7 @@ public class MainFrame {
     private JLabel footnoteColorLabel;
     private JLabel groupHeaderColorLabel;
     private JLabel emptyColorLabel;
-    private JButton submitAsMultitableFileButton;
+    private JButton markAsMultitableButton;
     private JButton nextFileButton;
     private JPanel startEndJPanel;
     private JLabel preambleDesc;
@@ -101,10 +101,9 @@ public class MainFrame {
     private File[] loadedFiles;
 
     private File currentFile;
-
     private SheetDisplayTableModel currentFileTableModel;
-
     private Sheet currentSheet;
+    private boolean currentFileIsMultiTable;
 
     private long startTime;
 
@@ -127,7 +126,7 @@ public class MainFrame {
             // write the results into a json file.
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                submitResult();
+                storeResultInMemory();
 
                 saveResults();
 
@@ -138,9 +137,8 @@ public class MainFrame {
         });
         loadAllFilesButton.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
-//            chooser.setCurrentDirectory(new File("/Users/Fuga/Documents/hpi/code/sidescript"));
             chooser.setCurrentDirectory(new File("."));
-            chooser.setDialogTitle("Dialog title");
+            chooser.setDialogTitle("Select Input File Folder");
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             chooser.setAcceptAllFileFilterUsed(false);
 
@@ -155,11 +153,7 @@ public class MainFrame {
 
                 final Map<String, List<String>> sheetNamesByFileName = new HashMap<>();
                 fileList.forEach(file -> {
-//                    String[] nameSplits = file.getName().split("@");
-//                    String fileName = nameSplits[0];
-//                    String sheetName = nameSplits[1].split(".csv")[0];
                     String[] nameSplits = GeneralUtils.splitFullName(file.getName());
-
                     sheetNamesByFileName.putIfAbsent(nameSplits[0], new LinkedList<>());
                     sheetNamesByFileName.get(nameSplits[0]).add(nameSplits[1]);
                 });
@@ -179,17 +173,22 @@ public class MainFrame {
                 }
 
                 if (resultPojo != null) {
-                    annotatedFileAmount = resultPojo.getSpreadSheetPojos().size();
-                    if (annotatedFileAmount == loadedFiles.length) {
-                        JOptionPane.showMessageDialog(null, "You have annotated all the data");
-                        return;
-                    }
-
-                    resultPojo.getSpreadSheetPojos().stream()
-                            .filter(spreadSheetPojo -> spreadSheetPojo.getIsMultitableFile().equals("false"))
+                    resultPojo.getSpreadSheetPojos()
                             .forEach(spreadSheetPojo -> {
+                                if (spreadSheetPojo.getIsMultitableFile().equals("true")) {
+                                    AnnotationResults annotationResults = new AnnotationResults(
+                                            spreadSheetPojo.getExcelFileName(),
+                                            spreadSheetPojo.getSpreadsheetName(),
+                                            spreadSheetPojo.getTimeExpense(),
+                                            true
+                                    );
+                                    this.store.getSpreadsheet(spreadSheetPojo.getExcelFileName(), spreadSheetPojo.getSpreadsheetName()).setAnnotated(true);
+                                    this.store.addAnnotation(annotationResults);
+                                    return;
+                                }
+
                                 String fullName = GeneralUtils.createFullName(spreadSheetPojo.getExcelFileName(), spreadSheetPojo.getSpreadsheetName());
-                                addToAnnotationReviewTable(fullName);
+                                addToAnnotationReviewTable(fullName); // add one piece to the review table.
 
                                 Optional<AnnotationPojo> optional = spreadSheetPojo.getAnnotationPojos().stream()
                                         .max(Comparator.comparingInt(AnnotationPojo::getEndLineNumber));
@@ -217,16 +216,30 @@ public class MainFrame {
                                 this.currentFile = new File(this.inputFileFolder + "/" + fullName);
                                 this.currentSheet = this.store.getSpreadsheet(spreadSheetPojo.getExcelFileName(), spreadSheetPojo.getSpreadsheetName());
                             });
+
+                    annotatedFileAmount = resultPojo.getSpreadSheetPojos().size();
                 }
                 loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
 
-                submitAsMultitableFileButton.setEnabled(true);
+                // if previously all the files have been annotated
+                if (annotatedFileAmount == loadedFiles.length) {
+                    nextFileButton.setEnabled(false);
+                    returnToCurrentButton.setEnabled(false);
+                    // do not load the next, because there is no next.
+//                    try {
+//                        loadFile(this.currentFile);
+//                        drawTableBackgroundColor(this.currentFile.getName());
+//                    } catch (IOException ex) {
+//                        ex.printStackTrace();
+//                    }
+                } else {
+                    nextFileButton.setEnabled(true);
+                    loadNextFile();
+                }
+
+                markAsMultitableButton.setEnabled(true);
                 submitAllResultButton.setEnabled(true);
-                nextFileButton.setEnabled(true);
 
-//                store = new RDMBSStore(null, this.queryHandler);
-
-                loadNextFile();
                 startTime = System.currentTimeMillis();
             }
         });
@@ -253,16 +266,27 @@ public class MainFrame {
         annotationReviewTableSelectionModel.addListSelectionListener(e -> {
             if (!annotationReviewTableSelectionModel.isSelectionEmpty()) {
                 this.nextFileButton.setEnabled(false);
-                this.submitAsMultitableFileButton.setEnabled(false);
-                if (this.currentFileTableModel == null) {
-                    this.currentFileTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
-                }
+//                this.submitAllResultButton.setEnabled(false);
 
                 int selectedIndex = annotationReviewTableSelectionModel.getMinSelectionIndex();
 
                 DefaultTableModel defaultTableModel = (DefaultTableModel) annotationReviewTable.getModel();
                 String fileName = (String) defaultTableModel.getValueAt(selectedIndex, 0);
-                annotationReviewTableSelection = fileName;
+
+                if (this.currentFileTableModel == null) {
+                    if (annotatedFileAmount == loadedFiles.length) {
+                        try {
+                            loadFile(new File(this.inputFileFolder + "/" + fileName));
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                    this.currentFileTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+                }
+
+                if (annotationReviewTableSelection != null) {
+                    storeRevision();
+                }
 
                 try {
                     loadFile(new File(this.inputFileFolder + "/" + fileName));
@@ -270,15 +294,15 @@ public class MainFrame {
                     ex.printStackTrace();
                 }
 
-                SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
-                AnnotationResults annotationResults = this.store.getAnnotation(fileName);
-                annotationResults.getAnnotationResults().forEach(result -> {
-                    int lineNumber = result.getLineNumber();
-                    String lineType = result.getType();
-                    sheetDisplayTableModel.setRowsBackgroundColor(lineNumber, lineNumber, ColorSolution.getColor(lineType));
-                });
+                drawTableBackgroundColor(fileName);
 
-                returnToCurrentButton.setEnabled(true);
+                annotationReviewTableSelection = fileName;
+
+                if (annotatedFileAmount == loadedFiles.length) {
+                    this.returnToCurrentButton.setEnabled(false);
+                } else {
+                    returnToCurrentButton.setEnabled(true);
+                }
             }
         });
 
@@ -399,7 +423,7 @@ public class MainFrame {
                 sheetDisplayTable.changeSelection(endLineIndex, 0, false, false);
             }
         });
-        submitAsMultitableFileButton.addActionListener(e -> {
+        markAsMultitableButton.addActionListener(e -> {
             endTime = System.currentTimeMillis();
             int selectCode = JOptionPane.showConfirmDialog(null,
                     "Are you sure to mark this spreadsheet as multi-table sheet?");
@@ -411,15 +435,15 @@ public class MainFrame {
             AnnotationResults results = new AnnotationResults(nameSplits[0], nameSplits[1], endTime - startTime, true);
 
             this.store.addAnnotation(results);
+            this.currentFileIsMultiTable = true;
 
-            // add a piece to the annotation review table.
-//            addToAnnotationReviewTable(currentFile.getName());
+            if (!annotationReviewTableSelectionModel.isSelectionEmpty()) {
+                int selectionIndex = annotationReviewTableSelectionModel.getMinSelectionIndex();
+                DefaultTableModel tableModel = (DefaultTableModel) annotationReviewTable.getModel();
+                tableModel.removeRow(selectionIndex);
+            }
 
-            loadNextFile();
-
-            this.currentFileTableModel = null;
-
-//            loadNextFile();
+//            this.currentFileTableModel = null;
 
             startTime = System.currentTimeMillis();
         });
@@ -428,7 +452,7 @@ public class MainFrame {
             endTime = System.currentTimeMillis();
             DefaultTableModel tableModel = (DefaultTableModel) sheetDisplayTable.getModel();
             if (tableModel.getColumnCount() != 0 || tableModel.getRowCount() != 0) {
-                if (!submitResult()) {
+                if (!storeResultInMemory()) {
                     return;
                 }
             } else {
@@ -437,7 +461,11 @@ public class MainFrame {
 
             this.currentFileTableModel = null;
 
+            annotatedFileAmount++;
+            this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
             loadNextFile();
+
+            this.currentFileIsMultiTable = false;
 
             startTime = System.currentTimeMillis();
         });
@@ -445,9 +473,7 @@ public class MainFrame {
             @Override
             public void mouseReleased(MouseEvent e) {
                 returnToCurrent();
-                returnToCurrentButton.setEnabled(false);
-                submitAsMultitableFileButton.setEnabled(true);
-                nextFileButton.setEnabled(true);
+                submitAllResultButton.setEnabled(true);
             }
         });
     }
@@ -533,7 +559,7 @@ public class MainFrame {
         exampleFigurePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(exampleFigurePanel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         groupheaderExample = new JLabel();
-        groupheaderExample.setIcon(new ImageIcon(getClass().getResource("/grouptitle-example.png")));
+        groupheaderExample.setIcon(new ImageIcon(getClass().getResource("/Screen Shot 2019-10-18 at 9.40.51 AM.png")));
         groupheaderExample.setText("");
         exampleFigurePanel.add(groupheaderExample, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
@@ -603,16 +629,16 @@ public class MainFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         loadFilePanel.add(submitPanel, gbc);
         submitPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null));
-        submitAsMultitableFileButton = new JButton();
-        submitAsMultitableFileButton.setEnabled(false);
-        submitAsMultitableFileButton.setText("Mark as Multitable File");
+        markAsMultitableButton = new JButton();
+        markAsMultitableButton.setEnabled(false);
+        markAsMultitableButton.setText("Mark as Multitable File");
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        submitPanel.add(submitAsMultitableFileButton, gbc);
+        submitPanel.add(markAsMultitableButton, gbc);
         nextFileButton = new JButton();
         nextFileButton.setEnabled(false);
         nextFileButton.setText("Next File");
@@ -930,7 +956,14 @@ public class MainFrame {
      *
      * @return
      */
-    private boolean submitResult() {
+    private boolean storeResultInMemory() {
+        if (currentFileIsMultiTable) {
+//            if (!returnToCurrentButton.isEnabled()) {
+//                addToAnnotationReviewTable(currentFile.getName());
+//            }
+            return true;
+        }
+
         SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
         if (sheetDisplayTableModel.hasUnannotatedLines()) {
             int selectCode = JOptionPane.showConfirmDialog(null,
@@ -978,6 +1011,8 @@ public class MainFrame {
                     saveResults();
 
                     disableAllButtons();
+                    annotatedFileAmount++;
+                    this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
                 }
                 return;
             }
@@ -988,8 +1023,7 @@ public class MainFrame {
             currentSheet = mostSimilarSheet;
         }
 
-        annotatedFileAmount++;
-        this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
+//        this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
 
         try {
             loadFile(currentFile);
@@ -1022,23 +1056,7 @@ public class MainFrame {
     }
 
     private void returnToCurrent() {
-        // first store the change to the reviewed sheet.
-        SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
-        if (sheetDisplayTableModel.hasUnannotatedLines()) {
-            int selectCode = JOptionPane.showConfirmDialog(null,
-                    "Some lines are not annotated yet. Do you still want to finish it? Click on \"Yes\" will automatically annotate this lines as empty lines");
-            if (selectCode != JOptionPane.OK_OPTION) {
-                return;
-            }
-        }
-
-        String[] nameSplits = GeneralUtils.splitFullName(annotationReviewTableSelection);
-
-        AnnotationResults results = new AnnotationResults(nameSplits[0], nameSplits[1], endTime - startTime);
-
-        results.annotate(sheetDisplayTableModel);
-
-        store.addAnnotation(results);
+        storeRevision();
 
         annotationReviewTable.clearSelection();
         try {
@@ -1050,7 +1068,29 @@ public class MainFrame {
 
         resizeColumnWidth(sheetDisplayTable);
 
+        annotationReviewTableSelection = null;
+
         nextFileButton.setEnabled(true);
+        returnToCurrentButton.setEnabled(false);
+        markAsMultitableButton.setEnabled(true);
+    }
+
+    private void storeRevision() {
+        SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
+        if (sheetDisplayTableModel.hasUnannotatedLines()) {
+            int selectCode = JOptionPane.showConfirmDialog(null,
+                    "Some lines are not annotated yet. Do you still want to finish it? Click on \"Yes\" will automatically annotate this lines as empty lines");
+            if (selectCode != JOptionPane.OK_OPTION) {
+                return;
+            }
+        }
+        String[] nameSplits = GeneralUtils.splitFullName(annotationReviewTableSelection);
+
+        AnnotationResults results = new AnnotationResults(nameSplits[0], nameSplits[1], endTime - startTime);
+
+        results.annotate(sheetDisplayTableModel);
+
+        store.addAnnotation(results);
     }
 
     private void resetReviewTable() {
@@ -1067,11 +1107,21 @@ public class MainFrame {
 
     private void disableAllButtons() {
         this.submitAllResultButton.setEnabled(false);
-        this.submitAsMultitableFileButton.setEnabled(false);
+        this.markAsMultitableButton.setEnabled(false);
         this.nextFileButton.setEnabled(false);
         this.returnToCurrentButton.setEnabled(false);
         this.copyPatternButton.setEnabled(false);
         this.pastePatternButton.setEnabled(false);
         this.loadAllFilesButton.setEnabled(false);
+    }
+
+    private void drawTableBackgroundColor(String fileName) {
+        SheetDisplayTableModel sheetDisplayTableModel = (SheetDisplayTableModel) this.sheetDisplayTable.getModel();
+        AnnotationResults annotationResults = this.store.getAnnotation(fileName);
+        annotationResults.getAnnotationResults().forEach(result -> {
+            int lineNumber = result.getLineNumber();
+            String lineType = result.getType();
+            sheetDisplayTableModel.setRowsBackgroundColor(lineNumber, lineNumber, ColorSolution.getColor(lineType));
+        });
     }
 }

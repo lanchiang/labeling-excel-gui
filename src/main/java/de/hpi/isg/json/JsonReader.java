@@ -14,7 +14,6 @@ public class JsonReader {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    // Todo
     private final String annotationResultJsonPath = "./annotation_result.json";
 
     public ResultPojo read() throws IOException {

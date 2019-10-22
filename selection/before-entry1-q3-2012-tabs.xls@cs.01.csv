@@ -1,0 +1,35 @@
+"Table cs.01: Number of Sponsoring Employers on UKBA register, by rating",,,,,,,
+,As at date:,,30-Sep-11,30-Dec-11,30-Mar-12,29-Jun-12,1-Oct-12
+Sponsors registered,,,"23,416","24,317","24,824","25,807","25,399"
+Tier,Sub Tier,Sponsor rating,,,,,
+*Total,*Total,*Total,"29,914","30,829","31,489","31,860","32,283"
+Tier 2,*Total,*Total,"26,268","27,124","27,721","28,034","28,416"
+Tier 5,*Total,*Total,"3,646","3,705","3,768","3,826","3,867"
+Tier 2,*Total,Highly Trusted Sponsor,1,1,1,1,1
+Tier 2 ,*Total,A rating,"25,597","26,565","27,172","27,498","27,962"
+Tier 2 ,*Total,B rating,670,558,548,527,438
+Tier 2,*Total,A (Premium),0,0,0,8,15
+Tier 5,*Total,Highly Trusted Sponsor,0,0,0,0,2
+Tier 5,*Total,A rating,"3,598","3,665","3,732","3,793","3,839"
+Tier 5,*Total,B rating,48,40,36,33,26
+Tier 2 ,General,A (Premium),0,0,0,4,9
+Tier 2 ,Intra Company Transfers (ICT),A (Premium),0,0,0,4,6
+Tier 2,General,Highly Trusted Sponsor,1,1,1,1,1
+Tier 2 ,General,A rating,"18,688","19,425","19,880","20,117","20,471"
+Tier 2,Intra Company Transfers (ICT),A rating,"5,326","5,501","5,625","5,697","5,789"
+Tier 2,Religious Workers,A rating,"1,064","1,111","1,132","1,146","1,162"
+Tier 2,Sport,A rating,519,528,535,538,540
+Tier 2 ,General,B rating,557,466,459,445,371
+Tier 2,Intra Company Transfers (ICT),B rating,49,43,42,39,28
+Tier 2,Religious Workers,B rating,59,46,44,41,38
+Tier 2,Sport,B rating,5,3,3,2,1
+Tier 5,Exchange ,Highly Trusted Sponsor,0,0,0,0,2
+Tier 5,Creative & Sporting,A rating,"1,959","1,977","2,011","2,055","2,063"
+Tier 5,Religious Workers,A rating,688,714,729,737,754
+Tier 5,Exchange ,A rating,167,168,173,179,182
+Tier 5,Voluntary Workers ,A rating,649,664,676,679,693
+Tier 5,International Agreements ,A rating,135,142,143,143,147
+Tier 5,Creative & Sporting,B rating,12,13,10,10,6
+Tier 5,Religious Workers,B rating,27,19,18,16,15
+Tier 5,Exchange ,B rating,0,0,0,0,0
+Tier 5,Voluntary Workers ,B rating,9,8,8,7,5
