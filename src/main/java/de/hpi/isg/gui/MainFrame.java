@@ -4,32 +4,36 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.opencsv.CSVReader;
 import de.hpi.isg.dao.DatabaseQueryHandler;
-import de.hpi.isg.elements.AnnotationResults;
-import de.hpi.isg.elements.Sheet;
+import de.hpi.isg.elements.*;
 import de.hpi.isg.json.JsonReader;
+import de.hpi.isg.json.JsonSheetEntry;
 import de.hpi.isg.json.JsonWriter;
+import de.hpi.isg.modules.AnnotateAggregationCellModule;
+import de.hpi.isg.modules.AnnotateCellClassModule;
 import de.hpi.isg.pojo.AnnotationPojo;
 import de.hpi.isg.pojo.ResultPojo;
 import de.hpi.isg.pojo.SpreadSheetPojo;
 import de.hpi.isg.storage.JsonStore;
 import de.hpi.isg.storage.Store;
-import de.hpi.isg.swing.RowNumberTable;
-import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
-import de.hpi.isg.swing.SheetDisplayTableModel;
+import de.hpi.isg.swing.*;
 import de.hpi.isg.utils.ColorSolution;
 import de.hpi.isg.utils.GeneralUtils;
 import lombok.Getter;
+import org.json.simple.JSONObject;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
+import javax.swing.text.StyleContext;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -50,6 +54,7 @@ public class MainFrame {
     private JLabel lineTypeDisplay;
     private JButton submitAllResultButton;
     private JTable sheetDisplayTable;
+    private JTable sheetDisplayCellTable;
     private JPanel labelOperatingPanel;
     private JLabel startLineLabel;
     private JLabel endLineLabel;
@@ -95,10 +100,61 @@ public class MainFrame {
     private JTable annotationReviewTable;
     private JScrollPane annotationReviewScrollPane;
     private JButton returnToCurrentButton;
+    private JScrollPane sheetDisplayCellPane;
+    private JPanel operatingCellPanel;
+    private JButton loadAnnotationButton;
+    private JLabel preambleCellLabel;
+    private JLabel headerCellLabel;
+    private JLabel dataCellLabel;
+    private JLabel aggregationCellLabel;
+    private JLabel footnoteCellLabel;
+    private JLabel groupHeaderCellLabel;
+    private JLabel emptyCellLabel;
+    private JTable annoReviewCellTable;
+    private JLabel numOfColumnsCell;
+    private JLabel numOfLinesCell;
+    private JLabel topLeftCellText;
+    private JLabel bottomRightCellText;
+    private JLabel cellBlockTypeText;
+    private JScrollPane annoReviewCellScrollPane;
+    private JButton storeAllResultsButton;
+    private JLabel selectedCellValue;
+    private JButton submitResultsButton;
+    private JRadioButton sumRadioButton;
+    private JRadioButton subtractRadioButton;
+    private JRadioButton averageRadioButton;
+    private JRadioButton percentageRadioButton;
+    private JPanel operatingAggrPanel;
+    private JButton aggrAnnotationLoadDatasetButton;
+    private JTable fileReviewTable;
+    private JScrollPane fileDisplayAggrPane;
+    private JTextField errorTextField;
+    private JPanel cellAnnotationMainPanel;
+    private JPanel aggrAnnotationMainPanel;
+    private JLabel numRowsAggr;
+    private JLabel numColumnsAggr;
+    private JLabel topleftIndexAggr;
+    private JLabel bottomRightIndexAggr;
+    private JPanel aggrFuncParasPanel;
+    private JLabel operandOneCellRange;
+    private JLabel operandTwoCellRange;
+    private JRadioButton operandOneRadioButton;
+    private JRadioButton operandTwoRadioButton;
+    private JLabel errorMessageLabel;
+    private JCheckBox hopSelectionModeCheckBox;
+    private JButton calculateHopsButton;
+    private JLabel modeHintLabel;
+    private JTable fileDisplayTableAggr;
 
     private int annotatedFileAmount = 0;
 
     private File[] loadedFiles;
+
+    private List<JSONObject> loadedFilesAsJson;
+
+    private List<JsonSheetEntry> loadedJsonSheetEntries;
+
+    private String datasetName;
 
     private File currentFile;
     private SheetDisplayTableModel currentFileTableModel;
@@ -117,10 +173,14 @@ public class MainFrame {
 
     private String annotationReviewTableSelection;
 
+    private AnnotateCellClassModule annotateCellClassModule;
+    private AnnotateAggregationCellModule annotateAggregationCellModule;
+
     @Getter
     private DatabaseQueryHandler queryHandler = new DatabaseQueryHandler();
 
     public MainFrame() {
+
         $$$setupUI$$$();
         submitAllResultButton.addActionListener(e -> {
             // write the results into a json file.
@@ -153,6 +213,7 @@ public class MainFrame {
 
                 final Map<String, List<String>> sheetNamesByFileName = new HashMap<>();
                 fileList.forEach(file -> {
+                    System.out.println(file.getName());
                     String[] nameSplits = GeneralUtils.splitFullName(file.getName());
                     sheetNamesByFileName.putIfAbsent(nameSplits[0], new LinkedList<>());
                     sheetNamesByFileName.get(nameSplits[0]).add(nameSplits[1]);
@@ -262,6 +323,19 @@ public class MainFrame {
             }
         });
 
+        annoReviewCellTable.getSelectionModel().addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting()) {
+                this.annotateCellClassModule.renderFile(annoReviewCellTable.getSelectionModel());
+            }
+        });
+
+        fileReviewTable.getSelectionModel().addListSelectionListener(e -> {
+//            System.out.println(e.getValueIsAdjusting());
+            if (!e.getValueIsAdjusting()) {
+                this.annotateAggregationCellModule.renderFile(fileReviewTable.getSelectionModel());
+            }
+        });
+
         ListSelectionModel annotationReviewTableSelectionModel = annotationReviewTable.getSelectionModel();
         annotationReviewTableSelectionModel.addListSelectionListener(e -> {
             if (!annotationReviewTableSelectionModel.isSelectionEmpty()) {
@@ -285,7 +359,9 @@ public class MainFrame {
                 }
 
                 if (annotationReviewTableSelection != null) {
-                    storeRevision();
+                    if (!this.currentFileIsMultiTable) {
+                        storeRevision();
+                    }
                 }
 
                 try {
@@ -293,6 +369,7 @@ public class MainFrame {
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
+//                this.currentFileTableModel = (SheetDisplayTableModel) sheetDisplayTable.getModel();
 
                 drawTableBackgroundColor(fileName);
 
@@ -305,6 +382,49 @@ public class MainFrame {
                 }
             }
         });
+
+        sheetDisplayCellTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                annotateCellClassModule.mouseOperationOnFileDisplayTable(e);
+            }
+        });
+
+        sheetDisplayCellTable.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                annotateCellClassModule.keyOperationOnFileDisplayTable(e);
+            }
+        });
+
+        fileDisplayTableAggr.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                annotateAggregationCellModule.mouseOperationOnFileDisplayTable(e);
+            }
+        });
+
+        fileDisplayTableAggr.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                annotateAggregationCellModule.keyOperationOnFileDisplayTable(e);
+            }
+        });
+
+//        mainPagePanel.addKeyListener(new KeyAdapter() {
+//            @Override
+//            public void keyReleased(KeyEvent e) {
+//                annotateAggregationCellModule.keyOperationOnFileDisplayTable(e);
+//            }
+//        });
+
+        ActionListener aggrFuncRadioGroupListener = e -> {
+            this.annotateAggregationCellModule.prepareAggregationFunctionSetting(e.getActionCommand());
+        };
+        sumRadioButton.addActionListener(aggrFuncRadioGroupListener);
+        subtractRadioButton.addActionListener(aggrFuncRadioGroupListener);
+        averageRadioButton.addActionListener(aggrFuncRadioGroupListener);
+        percentageRadioButton.addActionListener(aggrFuncRadioGroupListener);
 
         JPopupMenu lineTypePopupMenu = getLineTypePopupMenu();
 
@@ -431,7 +551,15 @@ public class MainFrame {
                 return;
             }
 
-            String[] nameSplits = GeneralUtils.splitFullName(currentFile.getName());
+            String[] nameSplits;
+            if (!annotationReviewTable.getSelectionModel().isSelectionEmpty()) {
+                int selectionIndex = annotationReviewTable.getSelectionModel().getMinSelectionIndex();
+                DefaultTableModel defaultTableModel = (DefaultTableModel) annotationReviewTable.getModel();
+                String fileName = (String) defaultTableModel.getValueAt(selectionIndex, 0);
+                nameSplits = GeneralUtils.splitFullName(fileName);
+            } else {
+                nameSplits = GeneralUtils.splitFullName(currentFile.getName());
+            }
             AnnotationResults results = new AnnotationResults(nameSplits[0], nameSplits[1], endTime - startTime, true);
 
             this.store.addAnnotation(results);
@@ -442,8 +570,6 @@ public class MainFrame {
                 DefaultTableModel tableModel = (DefaultTableModel) annotationReviewTable.getModel();
                 tableModel.removeRow(selectionIndex);
             }
-
-//            this.currentFileTableModel = null;
 
             startTime = System.currentTimeMillis();
         });
@@ -473,8 +599,71 @@ public class MainFrame {
             @Override
             public void mouseReleased(MouseEvent e) {
                 returnToCurrent();
+                currentFileIsMultiTable = false;
                 submitAllResultButton.setEnabled(true);
             }
+        });
+        loadAnnotationButton.addActionListener(e -> {
+            this.annotateCellClassModule.loadDataset(loadAnnotationButton, annoReviewCellTable);
+        });
+
+        storeAllResultsButton.addActionListener(e -> {
+            this.annotateCellClassModule.storeAnnotationResults();
+        });
+        aggrAnnotationLoadDatasetButton.addActionListener(e -> {
+            this.annotateAggregationCellModule.loadDataset(aggrAnnotationLoadDatasetButton, fileReviewTable);
+        });
+        menuTab.addChangeListener(e -> {
+            if (e.getSource() instanceof JTabbedPane) {
+                JTabbedPane menuTabbedPane = (JTabbedPane) e.getSource();
+                String title = menuTabbedPane.getTitleAt(menuTabbedPane.getSelectedIndex());
+                if ("Cell Type Annotation".equals(title)) {
+                    AnnotateCellPageComponents pageComponents = new AnnotateCellPageComponents(this.sheetDisplayCellTable, this.menuTab,
+                            this.sheetDisplayCellPane, this.operatingCellPanel, this.loadAnnotationButton, this.preambleCellLabel,
+                            this.headerCellLabel, this.dataCellLabel, this.aggregationCellLabel, this.footnoteCellLabel,
+                            this.groupHeaderCellLabel, this.emptyCellLabel, this.annoReviewCellTable, this.numOfColumnsCell,
+                            this.numOfLinesCell, this.topLeftCellText, this.bottomRightCellText, this.cellBlockTypeText,
+                            this.annoReviewCellScrollPane, this.storeAllResultsButton, this.selectedCellValue, this.submitResultsButton);
+                    this.annotateCellClassModule = (AnnotateCellClassModule) AnnotateCellClassModule.getInstance(pageComponents);
+                }
+                if ("Aggregation Type Annotation".equals(title)) {
+                    AnnotateAggregationPageComponents pageComponents = new AnnotateAggregationPageComponents(this.sumRadioButton,
+                            this.subtractRadioButton, this.averageRadioButton, this.percentageRadioButton,
+                            this.operatingAggrPanel, this.aggrAnnotationLoadDatasetButton, this.fileReviewTable,
+                            this.fileDisplayAggrPane, this.errorTextField, this.aggrAnnotationMainPanel,
+                            this.numRowsAggr, this.numColumnsAggr, this.topleftIndexAggr, this.bottomRightIndexAggr,
+                            this.fileDisplayTableAggr, this.operandOneRadioButton, this.operandTwoRadioButton,
+                            this.operandOneCellRange, this.operandTwoCellRange, this.errorMessageLabel, this.hopSelectionModeCheckBox,
+                            this.calculateHopsButton, this.modeHintLabel);
+                    this.annotateAggregationCellModule = (AnnotateAggregationCellModule) AnnotateAggregationCellModule.getInstance(pageComponents);
+                }
+            }
+
+        });
+
+        errorTextField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                annotateAggregationCellModule.onErrorParameterChanged();
+            }
+        });
+        errorTextField.addActionListener(e -> annotateAggregationCellModule.onErrorParameterChanged());
+
+        hopSelectionModeCheckBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                annotateAggregationCellModule.enableHopSelection(true);
+            } else if (e.getStateChange() == ItemEvent.DESELECTED) {
+                annotateAggregationCellModule.enableHopSelection(false);
+            }
+        });
+        calculateHopsButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                annotateAggregationCellModule.detectPotentialAggregators();
+            }
+        });
+        submitResultsButton.addActionListener(e -> {
+            this.annotateAggregationCellModule.storeAnnotationResults();
         });
     }
 
@@ -500,19 +689,18 @@ public class MainFrame {
     private void $$$setupUI$$$() {
         createUIComponents();
         mainPagePanel = new JPanel();
-        mainPagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1, true, true));
-        mainPagePanel.setBorder(BorderFactory.createTitledBorder(""));
+        mainPagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         menuTab = new JTabbedPane();
         menuTab.setTabLayoutPolicy(1);
         menuTab.setTabPlacement(1);
-        mainPagePanel.add(menuTab, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        mainPagePanel.add(menuTab, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 337), null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         menuTab.addTab("Instruction", panel1);
         lineTypeDescriptionPanel = new JPanel();
         lineTypeDescriptionPanel.setLayout(new GridLayoutManager(7, 2, new Insets(5, 10, 5, 10), -1, -1));
         panel1.add(lineTypeDescriptionPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
-        lineTypeDescriptionPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Line Type Description"));
+        lineTypeDescriptionPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Line Type Description", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         preambleDesc.setText("Preamble");
         lineTypeDescriptionPanel.add(preambleDesc, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, 16), null, 0, false));
         headerDesc.setText("Header");
@@ -551,7 +739,7 @@ public class MainFrame {
         howToUsePanel = new JPanel();
         howToUsePanel.setLayout(new GridLayoutManager(1, 1, new Insets(5, 10, 5, 10), -1, -1));
         panel1.add(howToUsePanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
-        howToUsePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "How to Use"));
+        howToUsePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "How to Use", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JLabel label8 = new JLabel();
         label8.setText("Please read the instruction document.");
         howToUsePanel.add(label8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -585,7 +773,7 @@ public class MainFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
         loadFilePanel.add(startEndJPanel, gbc);
-        startEndJPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null));
+        startEndJPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         loadAllFilesButton = new JButton();
         loadAllFilesButton.setText("Start Annotation");
         gbc = new GridBagConstraints();
@@ -628,7 +816,7 @@ public class MainFrame {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(5, 5, 5, 5);
         loadFilePanel.add(submitPanel, gbc);
-        submitPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null));
+        submitPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         markAsMultitableButton = new JButton();
         markAsMultitableButton.setEnabled(false);
         markAsMultitableButton.setText("Mark as Multitable File");
@@ -725,7 +913,7 @@ public class MainFrame {
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.BOTH;
         annotationPanel.add(sheetStatPanel, gbc);
-        sheetStatPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Spreadsheet statistics"));
+        sheetStatPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Spreadsheet statistics", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         numOfLinesLabel = new JLabel();
         numOfLinesLabel.setText("Number of Lines:");
         sheetStatPanel.add(numOfLinesLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -749,7 +937,8 @@ public class MainFrame {
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         annotationPanel.add(annotationReviewScrollPane, gbc);
-        annotationReviewScrollPane.setBorder(BorderFactory.createTitledBorder("Spreadsheet Annotation Review"));
+        annotationReviewScrollPane.setBorder(BorderFactory.createTitledBorder(null, "Spreadsheet Annotation Review", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        annotationReviewTable = new JTable();
         annotationReviewTable.setAutoCreateRowSorter(false);
         annotationReviewScrollPane.setViewportView(annotationReviewTable);
         patternOperationPanel = new JPanel();
@@ -760,7 +949,7 @@ public class MainFrame {
         gbc.gridheight = 2;
         gbc.fill = GridBagConstraints.BOTH;
         annotationPanel.add(patternOperationPanel, gbc);
-        patternOperationPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "Pattern operation"));
+        patternOperationPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "Pattern operation", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         copyPatternButton = new JButton();
         copyPatternButton.setEnabled(false);
         copyPatternButton.setText("Copy pattern");
@@ -773,10 +962,396 @@ public class MainFrame {
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
         panel3.add(sheetDisplayPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 1, false));
-        sheetDisplayPane.setBorder(BorderFactory.createTitledBorder("Spreedsheet"));
+        sheetDisplayPane.setBorder(BorderFactory.createTitledBorder(null, "Spreedsheet", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel4.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         menuTab.addTab("Multitable Annotation", panel4);
+        final JPanel panel5 = new JPanel();
+        panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel4.add(panel5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel6 = new JPanel();
+        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel4.add(panel6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        cellAnnotationMainPanel = new JPanel();
+        cellAnnotationMainPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        menuTab.addTab("Cell Type Annotation", cellAnnotationMainPanel);
+        operatingCellPanel = new JPanel();
+        operatingCellPanel.setLayout(new GridBagLayout());
+        cellAnnotationMainPanel.add(operatingCellPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new GridBagLayout());
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        operatingCellPanel.add(panel7, gbc);
+        storeAllResultsButton = new JButton();
+        storeAllResultsButton.setEnabled(true);
+        storeAllResultsButton.setText("Submit all Results");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        panel7.add(storeAllResultsButton, gbc);
+        loadAnnotationButton = new JButton();
+        loadAnnotationButton.setText("Start Annotation");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        panel7.add(loadAnnotationButton, gbc);
+        final JPanel panel8 = new JPanel();
+        panel8.setLayout(new GridBagLayout());
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        operatingCellPanel.add(panel8, gbc);
+        final JPanel panel9 = new JPanel();
+        panel9.setLayout(new GridLayoutManager(3, 2, new Insets(5, 5, 5, 5), -1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel8.add(panel9, gbc);
+        panel9.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "Block selection", TitledBorder.LEFT, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, -1, -1, panel9.getFont()), new Color(-16777216)));
+        final JLabel label10 = new JLabel();
+        label10.setText("Top left cell");
+        panel9.add(label10, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        topLeftCellText = new JLabel();
+        topLeftCellText.setText("n/a");
+        panel9.add(topLeftCellText, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        final JLabel label11 = new JLabel();
+        label11.setText("Cell Function Type");
+        label11.setVerticalAlignment(0);
+        label11.setVerticalTextPosition(0);
+        panel9.add(label11, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(151, 16), null, 1, false));
+        final JLabel label12 = new JLabel();
+        label12.setText("Bottom right cell");
+        panel9.add(label12, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        bottomRightCellText = new JLabel();
+        bottomRightCellText.setText("n/a");
+        panel9.add(bottomRightCellText, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        cellBlockTypeText = new JLabel();
+        cellBlockTypeText.setText("n/a");
+        panel9.add(cellBlockTypeText, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        final JPanel panel10 = new JPanel();
+        panel10.setLayout(new GridLayoutManager(6, 1, new Insets(5, 5, 5, 5), -1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.gridheight = 2;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel8.add(panel10, gbc);
+        preambleCellLabel.setText("Metadata (M)");
+        panel10.add(preambleCellLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
+        headerCellLabel.setText("Header (H)");
+        panel10.add(headerCellLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
+        dataCellLabel.setText("Data (D)");
+        panel10.add(dataCellLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
+        aggregationCellLabel.setText("Aggregation (A)");
+        panel10.add(aggregationCellLabel, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
+        footnoteCellLabel.setText("Footnote (F)");
+        panel10.add(footnoteCellLabel, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
+        groupHeaderCellLabel.setText("Group header (G)");
+        panel10.add(groupHeaderCellLabel, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(141, -1), null, 0, false));
+        final JPanel panel11 = new JPanel();
+        panel11.setLayout(new GridLayoutManager(2, 2, new Insets(5, 5, 5, 5), -1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel8.add(panel11, gbc);
+        panel11.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Spreadsheet statistics", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        final JLabel label13 = new JLabel();
+        label13.setText("Number of Lines:");
+        panel11.add(label13, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        numOfColumnsCell = new JLabel();
+        numOfColumnsCell.setText("");
+        panel11.add(numOfColumnsCell, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label14 = new JLabel();
+        label14.setText("Number of Columns");
+        panel11.add(label14, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        numOfLinesCell = new JLabel();
+        numOfLinesCell.setText("");
+        panel11.add(numOfLinesCell, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        annoReviewCellScrollPane = new JScrollPane();
+        annoReviewCellScrollPane.setAutoscrolls(false);
+        annoReviewCellScrollPane.setMaximumSize(new Dimension(-1, 500));
+        annoReviewCellScrollPane.setPreferredSize(new Dimension(-1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.gridheight = 2;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel8.add(annoReviewCellScrollPane, gbc);
+        annoReviewCellScrollPane.setBorder(BorderFactory.createTitledBorder(null, "Spreadsheet Annotation Review", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        annoReviewCellTable = new JTable();
+        annoReviewCellTable.setPreferredScrollableViewportSize(new Dimension(450, -1));
+        annoReviewCellScrollPane.setViewportView(annoReviewCellTable);
+        cellAnnotationMainPanel.add(sheetDisplayCellPane, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JPanel panel12 = new JPanel();
+        panel12.setLayout(new GridLayoutManager(1, 1, new Insets(0, 30, 0, 30), -1, -1));
+        cellAnnotationMainPanel.add(panel12, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        selectedCellValue = new JLabel();
+        selectedCellValue.setText("n/a");
+        panel12.add(selectedCellValue, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, new Dimension(-1, 20), new Dimension(-1, 20), new Dimension(-1, 20), 2, false));
+        aggrAnnotationMainPanel = new JPanel();
+        aggrAnnotationMainPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        menuTab.addTab("Aggregation Type Annotation", aggrAnnotationMainPanel);
+        operatingAggrPanel = new JPanel();
+        operatingAggrPanel.setLayout(new GridBagLayout());
+        aggrAnnotationMainPanel.add(operatingAggrPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel13 = new JPanel();
+        panel13.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.05;
+        gbc.fill = GridBagConstraints.BOTH;
+        operatingAggrPanel.add(panel13, gbc);
+        aggrAnnotationLoadDatasetButton = new JButton();
+        aggrAnnotationLoadDatasetButton.setText("Load dataset");
+        panel13.add(aggrAnnotationLoadDatasetButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        submitResultsButton = new JButton();
+        submitResultsButton.setText("Submit results");
+        panel13.add(submitResultsButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel14 = new JPanel();
+        panel14.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.2;
+        gbc.fill = GridBagConstraints.BOTH;
+        operatingAggrPanel.add(panel14, gbc);
+        final JPanel panel15 = new JPanel();
+        panel15.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel14.add(panel15, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel15.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "Selected Block", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, -1, -1, panel15.getFont()), null));
+        final JLabel label15 = new JLabel();
+        label15.setText("Top-left cell index");
+        panel15.add(label15, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label16 = new JLabel();
+        label16.setText("Bottom-right cell index");
+        panel15.add(label16, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        topleftIndexAggr = new JLabel();
+        topleftIndexAggr.setText("N/A");
+        panel15.add(topleftIndexAggr, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        bottomRightIndexAggr = new JLabel();
+        bottomRightIndexAggr.setText("N/A");
+        panel15.add(bottomRightIndexAggr, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel16 = new JPanel();
+        panel16.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel14.add(panel16, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel16.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-16777216)), "File Statistics", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        final JLabel label17 = new JLabel();
+        label17.setText("# rows");
+        panel16.add(label17, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label18 = new JLabel();
+        label18.setText("# columns");
+        panel16.add(label18, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        numRowsAggr = new JLabel();
+        numRowsAggr.setText("N/A");
+        panel16.add(numRowsAggr, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        numColumnsAggr = new JLabel();
+        numColumnsAggr.setText("N/A");
+        panel16.add(numColumnsAggr, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel17 = new JPanel();
+        panel17.setLayout(new GridBagLayout());
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.weightx = 0.2;
+        gbc.fill = GridBagConstraints.BOTH;
+        operatingAggrPanel.add(panel17, gbc);
+        panel17.setBorder(BorderFactory.createTitledBorder(null, "Aggregation Settings", TitledBorder.CENTER, TitledBorder.TOP, null, null));
+        aggrFuncParasPanel = new JPanel();
+        aggrFuncParasPanel.setLayout(new GridBagLayout());
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.1;
+        gbc.weighty = 0.5;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel17.add(aggrFuncParasPanel, gbc);
+        aggrFuncParasPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Function Parameters", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        operandOneCellRange = new JLabel();
+        operandOneCellRange.setText("N/A");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        aggrFuncParasPanel.add(operandOneCellRange, gbc);
+        operandTwoCellRange = new JLabel();
+        operandTwoCellRange.setText("N/A");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        aggrFuncParasPanel.add(operandTwoCellRange, gbc);
+        operandOneRadioButton = new JRadioButton();
+        operandOneRadioButton.setText("Operand 1:");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        aggrFuncParasPanel.add(operandOneRadioButton, gbc);
+        operandTwoRadioButton = new JRadioButton();
+        operandTwoRadioButton.setText("Operand 2:");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        aggrFuncParasPanel.add(operandTwoRadioButton, gbc);
+        errorMessageLabel = new JLabel();
+        errorMessageLabel.setText("");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        aggrFuncParasPanel.add(errorMessageLabel, gbc);
+        hopSelectionModeCheckBox = new JCheckBox();
+        hopSelectionModeCheckBox.setText("Hop selection mode");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        aggrFuncParasPanel.add(hopSelectionModeCheckBox, gbc);
+        calculateHopsButton = new JButton();
+        calculateHopsButton.setText("Calculate hops");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        aggrFuncParasPanel.add(calculateHopsButton, gbc);
+        modeHintLabel = new JLabel();
+        modeHintLabel.setText("View Mode");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        aggrFuncParasPanel.add(modeHintLabel, gbc);
+        final JPanel panel18 = new JPanel();
+        panel18.setLayout(new GridBagLayout());
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.15;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel17.add(panel18, gbc);
+        panel18.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Function", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        sumRadioButton = new JRadioButton();
+        sumRadioButton.setSelected(false);
+        sumRadioButton.setText("Sum");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel18.add(sumRadioButton, gbc);
+        subtractRadioButton = new JRadioButton();
+        subtractRadioButton.setText("Subtract");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel18.add(subtractRadioButton, gbc);
+        averageRadioButton = new JRadioButton();
+        averageRadioButton.setText("Average");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel18.add(averageRadioButton, gbc);
+        percentageRadioButton = new JRadioButton();
+        percentageRadioButton.setText("Percentage");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel18.add(percentageRadioButton, gbc);
+        final JPanel panel19 = new JPanel();
+        panel19.setLayout(new GridBagLayout());
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.weightx = 0.1;
+        gbc.weighty = 0.5;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel17.add(panel19, gbc);
+        panel19.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), "Global Parameters", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        final JLabel label19 = new JLabel();
+        label19.setText("Error (%)");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.2;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        panel19.add(label19, gbc);
+        errorTextField = new JTextField();
+        errorTextField.setText("0");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        panel19.add(errorTextField, gbc);
+        final JScrollPane scrollPane1 = new JScrollPane();
+        scrollPane1.setMaximumSize(new Dimension(-1, -1));
+        scrollPane1.setMinimumSize(new Dimension(-1, -1));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 0;
+        gbc.weightx = 0.8;
+        gbc.fill = GridBagConstraints.BOTH;
+        operatingAggrPanel.add(scrollPane1, gbc);
+        scrollPane1.setBorder(BorderFactory.createTitledBorder(null, "File Review", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        fileReviewTable = new JTable();
+        fileReviewTable.setPreferredScrollableViewportSize(new Dimension(-1, -1));
+        scrollPane1.setViewportView(fileReviewTable);
+        aggrAnnotationMainPanel.add(fileDisplayAggrPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        ButtonGroup buttonGroup;
+        buttonGroup = new ButtonGroup();
+        buttonGroup.add(sumRadioButton);
+        buttonGroup.add(subtractRadioButton);
+        buttonGroup.add(averageRadioButton);
+        buttonGroup.add(percentageRadioButton);
+        buttonGroup = new ButtonGroup();
+        buttonGroup.add(operandOneRadioButton);
+        buttonGroup.add(operandTwoRadioButton);
     }
 
     /**
@@ -795,7 +1370,10 @@ public class MainFrame {
                 resultName = currentFont.getName();
             }
         }
-        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(), size >= 0 ? size : currentFont.getSize());
+        Font font = new Font(resultName, style >= 0 ? style : currentFont.getStyle(), size >= 0 ? size : currentFont.getSize());
+        boolean isMac = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH).startsWith("mac");
+        Font fontWithFallback = isMac ? new Font(font.getFamily(), font.getStyle(), font.getSize()) : new StyleContext().getFont(font.getFamily(), font.getStyle(), font.getSize());
+        return fontWithFallback instanceof FontUIResource ? fontWithFallback : new FontUIResource(fontWithFallback);
     }
 
     /**
@@ -806,12 +1384,23 @@ public class MainFrame {
     }
 
     private void createUIComponents() {
-        resetReviewTable();
+//        resetReviewTable();
 
         sheetDisplayTable = new JTable();
         sheetDisplayPane = new JScrollPane(sheetDisplayTable);
         JTable rowTable = new RowNumberTable(sheetDisplayTable);
         sheetDisplayPane.setRowHeaderView(rowTable);
+
+        sheetDisplayCellTable = new JTable();
+        sheetDisplayCellPane = new JScrollPane(sheetDisplayCellTable);
+        JTable rowCellTable = new RowNumberTable(sheetDisplayCellTable);
+        sheetDisplayCellPane.setRowHeaderView(rowCellTable);
+
+        fileDisplayTableAggr = new JTable();
+        fileDisplayAggrPane = new JScrollPane(fileDisplayTableAggr);
+        JTable rowTableAggr = new RowNumberTable(fileDisplayTableAggr);
+        fileDisplayAggrPane.setRowHeaderView(rowTableAggr);
+//        fileDisplayAggrPane.setColumnHeaderView(rowTableAggr);
 
         preambleColorLabel = new JLabel("Preamble (P)");
         preambleColorLabel.setOpaque(true);
@@ -834,6 +1423,28 @@ public class MainFrame {
         emptyColorLabel = new JLabel("Empty (E)");
         emptyColorLabel.setOpaque(true);
         emptyColorLabel.setBackground(ColorSolution.EMPTY_LINE_BACKGROUND_COLOR);
+
+        preambleCellLabel = new JLabel("Preamble (P)");
+        preambleCellLabel.setOpaque(true);
+        preambleCellLabel.setBackground(ColorSolution.PREAMBLE_BACKGROUND_COLOR);
+        headerCellLabel = new JLabel("Header (H)");
+        headerCellLabel.setOpaque(true);
+        headerCellLabel.setBackground(ColorSolution.HEADER_BACKGROUND_COLOR);
+        dataCellLabel = new JLabel("Data (D)");
+        dataCellLabel.setOpaque(true);
+        dataCellLabel.setBackground(ColorSolution.DATA_BACKGROUND_COLOR);
+        aggregationCellLabel = new JLabel("Aggregation (A)");
+        aggregationCellLabel.setOpaque(true);
+        aggregationCellLabel.setBackground(ColorSolution.AGGREGATION_BACKGROUND_COLOR);
+        footnoteCellLabel = new JLabel("Footnote (F)");
+        footnoteCellLabel.setOpaque(true);
+        footnoteCellLabel.setBackground(ColorSolution.FOOTNOTE_BACKGROUND_COLOR);
+        groupHeaderCellLabel = new JLabel("Group header (G)");
+        groupHeaderCellLabel.setOpaque(true);
+        groupHeaderCellLabel.setBackground(ColorSolution.GROUND_HEADER_BACKGROUND_COLOR);
+        emptyCellLabel = new JLabel("Empty (E)");
+        emptyCellLabel.setOpaque(true);
+        emptyCellLabel.setBackground(ColorSolution.EMPTY_LINE_BACKGROUND_COLOR);
 
         preambleDesc = new JLabel("Preamble (P)");
         preambleDesc.setOpaque(true);
@@ -1011,8 +1622,11 @@ public class MainFrame {
                     saveResults();
 
                     disableAllButtons();
-                    annotatedFileAmount++;
-                    this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
+
+                    if (annotatedFileAmount != loadedFiles.length) {
+                        annotatedFileAmount++;
+                        this.loadedFileNumberLabel.setText(annotatedFileAmount + "/" + loadedFiles.length);
+                    }
                 }
                 return;
             }
@@ -1032,7 +1646,12 @@ public class MainFrame {
         }
     }
 
-    private void resizeColumnWidth(JTable table) {
+    // Todo: this function should be renamed to reflect its task better.
+    public static void resizeColumnWidth(JTable table) {
+        // set row height
+//        table.setRowHeight(20);
+
+        // set column width
         final TableColumnModel columnModel = table.getColumnModel();
         for (int column = 0; column < table.getColumnCount(); column++) {
             int width = 30; // Min width
@@ -1041,8 +1660,8 @@ public class MainFrame {
                 Component comp = table.prepareRenderer(renderer, row, column);
                 width = Math.max(comp.getPreferredSize().width + 1, width);
             }
-            if (width > 350)
-                width = 350;
+            if (width > 250)
+                width = 250;
             columnModel.getColumn(column).setPreferredWidth(width);
         }
     }
@@ -1056,7 +1675,9 @@ public class MainFrame {
     }
 
     private void returnToCurrent() {
-        storeRevision();
+        if (!currentFileIsMultiTable) {
+            storeRevision();
+        }
 
         annotationReviewTable.clearSelection();
         try {
@@ -1103,6 +1724,14 @@ public class MainFrame {
         annotationReviewTable = new JTable(tableModel);
         annotationReviewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         annotationReviewTable.setTableHeader(null);
+
+        annoReviewCellTable = new JTable(tableModel);
+        annoReviewCellTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        annoReviewCellTable.setTableHeader(null);
+
+        fileReviewTable = new JTable(tableModel);
+        fileReviewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        fileReviewTable.setTableHeader(null);
     }
 
     private void disableAllButtons() {

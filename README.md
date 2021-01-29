@@ -1,8 +1,16 @@
-# labeling-excel-gui
-This project implements a java gui interface to allow labeling excel file line functions
+# Verbose CSV File Annotation Tool
+This project provides a user-friendly GUI to allow annotating 1) line classes; 2) cell classes; 3) aggregations of verbose CSV files.
 
 Todo-list:
-* SheetDisplayTableModel implementation is not perfect.
-* Copy and paste pattern would both need a shortcut.
-* Maybe there is a need to add a new line class.
-* When the file is loaded, also load the already annotated files.
+* Cell class annotation
+  * SheetDisplayTableModel implementation is not perfect.
+  * Copy and paste pattern would both need a shortcut.
+  * Maybe there is a need to add a new line class.
+  * When the file is loaded, also load the already annotated files.
+    
+* Aggregation annotation
+  * Percentage calculation function has bugs.
+  * Add support for multi-aggregator view mode
+  * Reset error parameter when selecting a new file
+  * Add suport for free mode annotation
+

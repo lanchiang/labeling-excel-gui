@@ -1,6 +1,5 @@
 package de.hpi.isg.utils;
 
-import de.hpi.isg.elements.AnnotationResults;
 import de.hpi.isg.swing.SheetDisplayLineTypeRowRenderer;
 
 import java.awt.*;
@@ -24,32 +23,41 @@ public class ColorSolution {
     public static Color BROWN = new Color(128, 64, 64, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
     public static Color DARKGREY = new Color(64, 64, 64, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
     public static Color GREY  = new Color(128, 128, 128, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
-    public static Color LIGHTGREY = new Color(192, 192, 192, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
+
+    public static Color NULL_BORDER_COLOR = new Color(255, 255, 255, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
+    public static Color HIGHLIGHT_BORDER_COLOR = Color.RED;
+    public static Color OPERAND_BORDER_COLOR = Color.BLUE;
+    public static Color SELECT_AGGREGATEE_COLOR = Color.ORANGE;
+    public static Color ANNOTATED_AGGREGATEE_COLOR = Color.PINK;
+    public static Color SUM_AGGREGATOR_COLOR = new Color(16, 165, 140, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
+    public static Color SUBTRACT_AGGREGATOR_COLOR = new Color(192, 32, 172, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
+    public static Color AVERAGE_AGGREGATOR_COLOR = new Color(178, 100,30, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
+    public static Color PERCENTAGE_AGGREGATOR_COLOR = new Color(150, 12, 0, SheetDisplayLineTypeRowRenderer.OPACITY_PARAMETER);
 
     public static Color getColor(String string) {
         Color color;
         switch (string) {
-            case LineTypeUtils.PREAMBLE: {
+            case LabelUtils.PREAMBLE: {
                 color = PREAMBLE_BACKGROUND_COLOR;
                 break;
             }
-            case LineTypeUtils.HEADER: {
+            case LabelUtils.HEADER: {
                 color = HEADER_BACKGROUND_COLOR;
                 break;
             }
-            case LineTypeUtils.DATA: {
+            case LabelUtils.DATA: {
                 color = DATA_BACKGROUND_COLOR;
                 break;
             }
-            case LineTypeUtils.AGGREGATION: {
+            case LabelUtils.AGGREGATION: {
                 color = AGGREGATION_BACKGROUND_COLOR;
                 break;
             }
-            case LineTypeUtils.FOOTNOTE: {
+            case LabelUtils.FOOTNOTE: {
                 color = FOOTNOTE_BACKGROUND_COLOR;
                 break;
             }
-            case LineTypeUtils.GROUP_HEADER: {
+            case LabelUtils.GROUP_HEADER: {
                 color = GROUND_HEADER_BACKGROUND_COLOR;
                 break;
             }
@@ -60,22 +68,90 @@ public class ColorSolution {
         return color;
     }
 
+    public static Color getAggregatorColor(String string) {
+        Color color;
+        switch (string) {
+            case LabelUtils.SUM: {
+                color = SUM_AGGREGATOR_COLOR;
+                break;
+            }
+            case LabelUtils.SUBTRACT: {
+                color = SUBTRACT_AGGREGATOR_COLOR;
+                break;
+            }
+            case LabelUtils.AVERAGE: {
+                color = AVERAGE_AGGREGATOR_COLOR;
+                break;
+            }
+            case LabelUtils.PERCENTAGE: {
+                color = PERCENTAGE_AGGREGATOR_COLOR;
+                break;
+            }
+            default: {
+                color = DEFAULT_BACKGROUND_COLOR;
+            }
+        }
+        return color;
+    }
+
+    public static Color getColorRNN(String string) {
+        Color color;
+        if (LabelUtils.METADATA_RNN.equals(string)) {
+            color = ColorSolution.PREAMBLE_BACKGROUND_COLOR;
+        } else if (LabelUtils.HEADER_RNN.equals(string)) {
+            color = ColorSolution.HEADER_BACKGROUND_COLOR;
+        } else if (LabelUtils.ATTRIBUTE_RNN.equals(string)) {
+            color = ColorSolution.GROUND_HEADER_BACKGROUND_COLOR;
+        } else if (LabelUtils.DATA_RNN.equals(string)) {
+            color = ColorSolution.DATA_BACKGROUND_COLOR;
+        } else if (LabelUtils.DERIVED_RNN.equals(string)) {
+            color = ColorSolution.AGGREGATION_BACKGROUND_COLOR;
+        } else if (LabelUtils.NOTES_RNN.equals(string)) {
+            color = ColorSolution.FOOTNOTE_BACKGROUND_COLOR;
+        } else {
+            color = ColorSolution.DEFAULT_BACKGROUND_COLOR;
+        }
+        return color;
+    }
+
     public static String getLineType(Color color) {
         String lineType;
         if (color.equals(PREAMBLE_BACKGROUND_COLOR)) {
-            lineType = LineTypeUtils.PREAMBLE;
+            lineType = LabelUtils.PREAMBLE;
         } else if (color.equals(HEADER_BACKGROUND_COLOR)) {
-            lineType = LineTypeUtils.HEADER;
+            lineType = LabelUtils.HEADER;
         } else if (color.equals(DATA_BACKGROUND_COLOR)) {
-            lineType = LineTypeUtils.DATA;
+            lineType = LabelUtils.DATA;
         } else if (color.equals(AGGREGATION_BACKGROUND_COLOR)) {
-            lineType = LineTypeUtils.AGGREGATION;
+            lineType = LabelUtils.AGGREGATION;
         } else if (color.equals(FOOTNOTE_BACKGROUND_COLOR)) {
-            lineType = LineTypeUtils.FOOTNOTE;
+            lineType = LabelUtils.FOOTNOTE;
         } else if (color.equals(GROUND_HEADER_BACKGROUND_COLOR)) {
-            lineType = LineTypeUtils.GROUP_HEADER;
+            lineType = LabelUtils.GROUP_HEADER;
         } else if (color.equals(EMPTY_LINE_BACKGROUND_COLOR)) {
-            lineType = LineTypeUtils.EMPTY;
+            lineType = LabelUtils.EMPTY;
+        } else {
+            return null;
+        }
+        return lineType;
+    }
+
+    public static String getLineTypeRNN(Color color) {
+        String lineType;
+        if (color.equals(PREAMBLE_BACKGROUND_COLOR)) {
+            lineType = LabelUtils.METADATA_RNN;
+        } else if (color.equals(HEADER_BACKGROUND_COLOR)) {
+            lineType = LabelUtils.HEADER_RNN;
+        } else if (color.equals(DATA_BACKGROUND_COLOR)) {
+            lineType = LabelUtils.DATA_RNN;
+        } else if (color.equals(AGGREGATION_BACKGROUND_COLOR)) {
+            lineType = LabelUtils.DERIVED_RNN;
+        } else if (color.equals(FOOTNOTE_BACKGROUND_COLOR)) {
+            lineType = LabelUtils.NOTES_RNN;
+        } else if (color.equals(GROUND_HEADER_BACKGROUND_COLOR)) {
+            lineType = LabelUtils.ATTRIBUTE_RNN;
+        } else if (color.equals(EMPTY_LINE_BACKGROUND_COLOR)) {
+            lineType = LabelUtils.EMPTY_RNN;
         } else {
             return null;
         }

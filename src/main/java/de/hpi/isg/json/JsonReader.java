@@ -14,9 +14,8 @@ public class JsonReader {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    private final String annotationResultJsonPath = "./annotation_result.json";
-
     public ResultPojo read() throws IOException {
+        String annotationResultJsonPath = "./annotation_result.json";
         File file = new File(annotationResultJsonPath);
         if (!file.exists()) {
             return null;

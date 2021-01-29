@@ -20,3 +20,19 @@ annotation_result*
 
 # input data folder
 data*/
+files/
+selected-mendeley/
+
+# input dataset
+*.jl
+*.gz
+
+# log files
+*.log
+
+# executable files
+*.jar
+
+# .DS_Store
+.DS_Store
+**/.DS_Store

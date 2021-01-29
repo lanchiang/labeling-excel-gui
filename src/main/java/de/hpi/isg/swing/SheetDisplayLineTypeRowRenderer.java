@@ -1,12 +1,13 @@
 package de.hpi.isg.swing;
 
-import de.hpi.isg.utils.ColorSolution;
-
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.MatteBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
-import java.awt.Color;
 
 /**
  * @author Lan Jiang

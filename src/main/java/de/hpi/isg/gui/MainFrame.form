@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="de.hpi.isg.gui.MainFrame">
-  <grid id="27dc6" binding="mainPagePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="true" same-size-vertically="true" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="mainPagePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="39" y="33" width="1796" height="1508"/>
     </constraints>
     <properties/>
-    <border type="none" title=""/>
+    <border type="none"/>
     <children>
       <tabbedpane id="edf2e" binding="menuTab">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false">
-            <preferred-size width="200" height="200"/>
+            <preferred-size width="200" height="337"/>
           </grid>
         </constraints>
         <properties>
@@ -545,7 +545,7 @@
                         </properties>
                         <border type="none" title="Spreadsheet Annotation Review"/>
                         <children>
-                          <component id="32fa1" class="javax.swing.JTable" binding="annotationReviewTable" custom-create="true">
+                          <component id="32fa1" class="javax.swing.JTable" binding="annotationReviewTable">
                             <constraints/>
                             <properties>
                               <autoCreateRowSorter value="false"/>
@@ -612,17 +612,694 @@
               </grid>
             </children>
           </grid>
-          <grid id="25ba0" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="25ba0" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <tabbedpane title="Multitable Annotation"/>
             </constraints>
             <properties/>
             <border type="none"/>
-            <children/>
+            <children>
+              <grid id="dcd39" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children/>
+              </grid>
+              <grid id="99af1" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children/>
+              </grid>
+            </children>
+          </grid>
+          <grid id="ad15d" binding="cellAnnotationMainPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <tabbedpane title="Cell Type Annotation"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="573da" binding="operatingCellPanel" layout-manager="GridBagLayout">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <grid id="bbe6f" layout-manager="GridBagLayout">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <gridbag weightx="1.0" weighty="1.0"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="eaca0" class="javax.swing.JButton" binding="storeAllResultsButton">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                          <gridbag weightx="1.0" weighty="1.0"/>
+                        </constraints>
+                        <properties>
+                          <enabled value="true"/>
+                          <text value="Submit all Results"/>
+                        </properties>
+                      </component>
+                      <component id="450be" class="javax.swing.JButton" binding="loadAnnotationButton">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                          <gridbag weightx="1.0" weighty="1.0"/>
+                        </constraints>
+                        <properties>
+                          <text value="Start Annotation"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                  <grid id="62d14" layout-manager="GridBagLayout">
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <gridbag weightx="1.0" weighty="1.0"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <grid id="bdf12" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="5" left="5" bottom="5" right="5"/>
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="1" use-parent-layout="false">
+                            <preferred-size width="311" height="56"/>
+                            <maximum-size width="200" height="-1"/>
+                          </grid>
+                          <gridbag weightx="0.0" weighty="0.0"/>
+                        </constraints>
+                        <properties/>
+                        <border type="line" title="Block selection" title-justification="1">
+                          <font/>
+                          <title-color color="-16777216"/>
+                          <color color="-16777216"/>
+                        </border>
+                        <children>
+                          <component id="8f0b9" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="1" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Top left cell"/>
+                            </properties>
+                          </component>
+                          <component id="a5181" class="javax.swing.JLabel" binding="topLeftCellText">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="50" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="n/a"/>
+                            </properties>
+                          </component>
+                          <component id="f2fdd" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="1" use-parent-layout="false">
+                                <preferred-size width="151" height="16"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="Cell Function Type"/>
+                              <verticalAlignment value="0"/>
+                              <verticalTextPosition value="0"/>
+                            </properties>
+                          </component>
+                          <component id="52fdb" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="1" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Bottom right cell"/>
+                            </properties>
+                          </component>
+                          <component id="1206e" class="javax.swing.JLabel" binding="bottomRightCellText">
+                            <constraints>
+                              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="50" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="n/a"/>
+                            </properties>
+                          </component>
+                          <component id="a2744" class="javax.swing.JLabel" binding="cellBlockTypeText">
+                            <constraints>
+                              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="50" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="n/a"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <grid id="72136" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="5" left="5" bottom="5" right="5"/>
+                        <constraints>
+                          <grid row="0" column="1" row-span="2" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                            <maximum-size width="200" height="-1"/>
+                          </grid>
+                          <gridbag weightx="0.0" weighty="0.0"/>
+                        </constraints>
+                        <properties/>
+                        <border type="none"/>
+                        <children>
+                          <component id="12432" class="javax.swing.JLabel" binding="preambleCellLabel" custom-create="true">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="141" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="Metadata (M)"/>
+                            </properties>
+                          </component>
+                          <component id="973d" class="javax.swing.JLabel" binding="headerCellLabel" custom-create="true">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="141" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="Header (H)"/>
+                            </properties>
+                          </component>
+                          <component id="c8057" class="javax.swing.JLabel" binding="dataCellLabel" custom-create="true">
+                            <constraints>
+                              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="141" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="Data (D)"/>
+                            </properties>
+                          </component>
+                          <component id="e32e1" class="javax.swing.JLabel" binding="aggregationCellLabel" custom-create="true">
+                            <constraints>
+                              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="141" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="Aggregation (A)"/>
+                            </properties>
+                          </component>
+                          <component id="fab8f" class="javax.swing.JLabel" binding="footnoteCellLabel" custom-create="true">
+                            <constraints>
+                              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="141" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="Footnote (F)"/>
+                            </properties>
+                          </component>
+                          <component id="29de1" class="javax.swing.JLabel" binding="groupHeaderCellLabel" custom-create="true">
+                            <constraints>
+                              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="141" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text value="Group header (G)"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <grid id="c2f37" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="5" left="5" bottom="5" right="5"/>
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                            <maximum-size width="200" height="-1"/>
+                          </grid>
+                          <gridbag weightx="0.0" weighty="0.0"/>
+                        </constraints>
+                        <properties/>
+                        <border type="line" title="Spreadsheet statistics"/>
+                        <children>
+                          <component id="c7c57" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Number of Lines:"/>
+                            </properties>
+                          </component>
+                          <component id="b649b" class="javax.swing.JLabel" binding="numOfColumnsCell">
+                            <constraints>
+                              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value=""/>
+                            </properties>
+                          </component>
+                          <component id="7f838" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Number of Columns"/>
+                            </properties>
+                          </component>
+                          <component id="5bfb9" class="javax.swing.JLabel" binding="numOfLinesCell">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value=""/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <scrollpane id="99c29" binding="annoReviewCellScrollPane">
+                        <constraints>
+                          <grid row="0" column="2" row-span="2" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                          <gridbag weightx="1.0" weighty="0.0"/>
+                        </constraints>
+                        <properties>
+                          <autoscrolls value="false"/>
+                          <maximumSize width="-1" height="500"/>
+                          <preferredSize width="-1" height="-1"/>
+                        </properties>
+                        <border type="none" title="Spreadsheet Annotation Review"/>
+                        <children>
+                          <component id="3b295" class="javax.swing.JTable" binding="annoReviewCellTable">
+                            <constraints/>
+                            <properties>
+                              <preferredScrollableViewportSize width="450" height="-1"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </scrollpane>
+                    </children>
+                  </grid>
+                </children>
+              </grid>
+              <scrollpane id="8129d" binding="sheetDisplayCellPane" custom-create="true">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children/>
+              </scrollpane>
+              <grid id="66570" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="30" bottom="0" right="30"/>
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="475b3" class="javax.swing.JLabel" binding="selectedCellValue">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="1" indent="2" use-parent-layout="false">
+                        <minimum-size width="-1" height="20"/>
+                        <preferred-size width="-1" height="20"/>
+                        <maximum-size width="-1" height="20"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <text value="n/a"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+            </children>
+          </grid>
+          <grid id="1eb29" binding="aggrAnnotationMainPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <tabbedpane title="Aggregation Type Annotation"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="c54c2" binding="operatingAggrPanel" layout-manager="GridBagLayout">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <grid id="f76b6" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <gridbag weightx="0.05" weighty="0.0"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="6e730" class="javax.swing.JButton" binding="aggrAnnotationLoadDatasetButton" default-binding="true">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="Load dataset"/>
+                        </properties>
+                      </component>
+                      <component id="70d54" class="javax.swing.JButton" binding="submitResultsButton" default-binding="true">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="Submit results"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                  <grid id="1a373" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <gridbag weightx="0.2" weighty="0.0"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <grid id="f3366" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                        <border type="line" title="Selected Block">
+                          <font/>
+                          <color color="-16777216"/>
+                        </border>
+                        <children>
+                          <component id="8c555" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Top-left cell index"/>
+                            </properties>
+                          </component>
+                          <component id="e40f6" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Bottom-right cell index"/>
+                            </properties>
+                          </component>
+                          <component id="98b30" class="javax.swing.JLabel" binding="topleftIndexAggr">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="N/A"/>
+                            </properties>
+                          </component>
+                          <component id="966c" class="javax.swing.JLabel" binding="bottomRightIndexAggr">
+                            <constraints>
+                              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="N/A"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <grid id="42189" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                        <border type="line" title="File Statistics">
+                          <color color="-16777216"/>
+                        </border>
+                        <children>
+                          <component id="dd33c" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="# rows"/>
+                            </properties>
+                          </component>
+                          <component id="4b253" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="# columns"/>
+                            </properties>
+                          </component>
+                          <component id="3967f" class="javax.swing.JLabel" binding="numRowsAggr">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="N/A"/>
+                            </properties>
+                          </component>
+                          <component id="b7eca" class="javax.swing.JLabel" binding="numColumnsAggr">
+                            <constraints>
+                              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="N/A"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                    </children>
+                  </grid>
+                  <grid id="ab168" layout-manager="GridBagLayout">
+                    <constraints>
+                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <gridbag weightx="0.2" weighty="0.0"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none" title="Aggregation Settings" title-justification="2" title-position="2"/>
+                    <children>
+                      <grid id="6a5af" binding="aggrFuncParasPanel" layout-manager="GridBagLayout">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                          <gridbag weightx="0.1" weighty="0.5"/>
+                        </constraints>
+                        <properties/>
+                        <border type="line" title="Function Parameters"/>
+                        <children>
+                          <component id="96b6c" class="javax.swing.JLabel" binding="operandOneCellRange">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="1.0" weighty="1.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="N/A"/>
+                            </properties>
+                          </component>
+                          <component id="c1a8a" class="javax.swing.JLabel" binding="operandTwoCellRange">
+                            <constraints>
+                              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="1.0" weighty="1.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="N/A"/>
+                            </properties>
+                          </component>
+                          <component id="2505d" class="javax.swing.JRadioButton" binding="operandOneRadioButton">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="0.0" weighty="0.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="Operand 1:"/>
+                            </properties>
+                          </component>
+                          <component id="b3e6c" class="javax.swing.JRadioButton" binding="operandTwoRadioButton">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="0.0" weighty="0.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="Operand 2:"/>
+                            </properties>
+                          </component>
+                          <component id="adaee" class="javax.swing.JLabel" binding="errorMessageLabel">
+                            <constraints>
+                              <grid row="4" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="0.0" weighty="0.0"/>
+                            </constraints>
+                            <properties>
+                              <text value=""/>
+                            </properties>
+                          </component>
+                          <component id="2f496" class="javax.swing.JCheckBox" binding="hopSelectionModeCheckBox" default-binding="true">
+                            <constraints>
+                              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="0.0" weighty="0.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="Hop selection mode"/>
+                            </properties>
+                          </component>
+                          <component id="3758b" class="javax.swing.JButton" binding="calculateHopsButton">
+                            <constraints>
+                              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="0.0" weighty="0.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="Calculate hops"/>
+                            </properties>
+                          </component>
+                          <component id="7746e" class="javax.swing.JLabel" binding="modeHintLabel">
+                            <constraints>
+                              <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="0.0" weighty="0.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="View Mode"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <grid id="ff2d1" layout-manager="GridBagLayout">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                          <gridbag weightx="0.15" weighty="1.0"/>
+                        </constraints>
+                        <properties/>
+                        <border type="line" title="Function"/>
+                        <children>
+                          <component id="3fcd1" class="javax.swing.JRadioButton" binding="sumRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag weightx="1.0" weighty="1.0"/>
+                            </constraints>
+                            <properties>
+                              <selected value="false"/>
+                              <text value="Sum"/>
+                            </properties>
+                          </component>
+                          <component id="2cbcb" class="javax.swing.JRadioButton" binding="subtractRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag weightx="1.0" weighty="1.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="Subtract"/>
+                            </properties>
+                          </component>
+                          <component id="58bb8" class="javax.swing.JRadioButton" binding="averageRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag weightx="1.0" weighty="1.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="Average"/>
+                            </properties>
+                          </component>
+                          <component id="d74b4" class="javax.swing.JRadioButton" binding="percentageRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag weightx="1.0" weighty="1.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="Percentage"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <grid id="ca6c8" layout-manager="GridBagLayout">
+                        <constraints>
+                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                          <gridbag weightx="0.1" weighty="0.5"/>
+                        </constraints>
+                        <properties/>
+                        <border type="line" title="Global Parameters"/>
+                        <children>
+                          <component id="110e8" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="0.2" weighty="1.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="Error (%)"/>
+                            </properties>
+                          </component>
+                          <component id="38ebb" class="javax.swing.JTextField" binding="errorTextField">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                <preferred-size width="150" height="-1"/>
+                              </grid>
+                              <gridbag top="5" left="5" bottom="5" right="5" weightx="1.0" weighty="1.0"/>
+                            </constraints>
+                            <properties>
+                              <text value="0"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                    </children>
+                  </grid>
+                  <scrollpane id="48777">
+                    <constraints>
+                      <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                        <maximum-size width="-1" height="500"/>
+                      </grid>
+                      <gridbag weightx="0.8" weighty="0.0"/>
+                    </constraints>
+                    <properties>
+                      <maximumSize width="-1" height="-1"/>
+                      <minimumSize width="-1" height="-1"/>
+                    </properties>
+                    <border type="none" title="File Review"/>
+                    <children>
+                      <component id="759cc" class="javax.swing.JTable" binding="fileReviewTable">
+                        <constraints/>
+                        <properties>
+                          <preferredScrollableViewportSize width="-1" height="-1"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </scrollpane>
+                </children>
+              </grid>
+              <scrollpane id="35a9b" binding="fileDisplayAggrPane" custom-create="true">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children/>
+              </scrollpane>
+            </children>
           </grid>
         </children>
       </tabbedpane>
     </children>
   </grid>
+  <buttonGroups>
+    <group name="aggrFunc">
+      <member id="3fcd1"/>
+      <member id="2cbcb"/>
+      <member id="58bb8"/>
+      <member id="d74b4"/>
+    </group>
+    <group name="operands">
+      <member id="2505d"/>
+      <member id="b3e6c"/>
+    </group>
+  </buttonGroups>
 </form>
