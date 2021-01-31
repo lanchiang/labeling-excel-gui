@@ -15,11 +15,11 @@ import java.util.regex.Pattern;
 @Getter
 public class BlockIndexTuples {
 
-    private final FileIndexTuple topLeftIndexTuple;
+    private final CellIndex topLeftIndexTuple;
 
-    private final FileIndexTuple bottomRightIndexTuple;
+    private final CellIndex bottomRightIndexTuple;
 
-    public BlockIndexTuples(FileIndexTuple topLeftIndexTuple, FileIndexTuple bottomRightIndexTuple) {
+    public BlockIndexTuples(CellIndex topLeftIndexTuple, CellIndex bottomRightIndexTuple) {
         this.topLeftIndexTuple = topLeftIndexTuple;
         this.bottomRightIndexTuple = bottomRightIndexTuple;
     }
@@ -38,20 +38,20 @@ public class BlockIndexTuples {
             bottomIndex = Integer.parseInt(matcher.group(1)) - 1;
             rightIndex = Integer.parseInt(matcher.group(2)) - 1;
         }
-        return new BlockIndexTuples(new FileIndexTuple(topIndex, leftIndex), new FileIndexTuple(bottomIndex, rightIndex));
+        return new BlockIndexTuples(new CellIndex(topIndex, leftIndex), new CellIndex(bottomIndex, rightIndex));
     }
 
-    public List<FileIndexTuple> flatten() {
-        List<FileIndexTuple> fileIndexTuples = new ArrayList<>();
+    public List<CellIndex> flatten() {
+        List<CellIndex> cellIndices = new ArrayList<>();
         for (int i = this.topLeftIndexTuple.getRowIndex(); i <= this.bottomRightIndexTuple.getRowIndex(); i++) {
             for (int j = this.topLeftIndexTuple.getColumnIndex(); j <= this.bottomRightIndexTuple.getColumnIndex(); j++) {
-                fileIndexTuples.add(new FileIndexTuple(i, j));
+                cellIndices.add(new CellIndex(i, j));
             }
         }
-        return fileIndexTuples;
+        return cellIndices;
     }
 
-    public boolean containsIndex(FileIndexTuple tuple) {
+    public boolean containsIndex(CellIndex tuple) {
         return this.flatten().contains(tuple);
     }
 

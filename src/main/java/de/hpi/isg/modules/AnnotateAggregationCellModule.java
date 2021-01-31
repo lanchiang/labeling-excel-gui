@@ -1,6 +1,9 @@
 package de.hpi.isg.modules;
 
 import de.hpi.isg.elements.*;
+import de.hpi.isg.elements.aggregations.AggregationDetector;
+import de.hpi.isg.elements.aggregations.AverageAggregationDetector;
+import de.hpi.isg.elements.aggregations.SumAggregationDetector;
 import de.hpi.isg.gui.MainFrame;
 import de.hpi.isg.io.FileWriter;
 import de.hpi.isg.json.JsonSheetEntry;
@@ -62,6 +65,9 @@ public class AnnotateAggregationCellModule extends Module {
 
     @Override
     public void renderFile(ListSelectionModel selectionModel) {
+        // reset the error parameter to default: 0
+        resetErrorParameter();
+
         int selectedIndex = selectionModel.getMinSelectionIndex();
 
         DefaultTableModel defaultTableModel = (DefaultTableModel) this.pageComponents.getFileReviewTable().getModel();
@@ -105,13 +111,13 @@ public class AnnotateAggregationCellModule extends Module {
             for (Object relationObj : annotations) {
                 JSONObject jsonObj = (JSONObject) relationObj;
                 JSONArray array = (JSONArray) jsonObj.get("aggregator_index");
-                FileIndexTuple aggregator_index = new FileIndexTuple(Integer.parseInt(array.get(0).toString()), Integer.parseInt(array.get(1).toString()));
+                CellIndex aggregator_index = new CellIndex(Integer.parseInt(array.get(0).toString()), Integer.parseInt(array.get(1).toString()));
                 String operator = jsonObj.get("operator").toString();
                 array = (JSONArray) jsonObj.get("aggregatee_indices");
-                List<FileIndexTuple> aggregatee_indices = new ArrayList<>();
+                List<CellIndex> aggregatee_indices = new ArrayList<>();
                 for (Object obj : array) {
                     JSONArray aggregatee = (JSONArray) obj;
-                    FileIndexTuple aggregatee_index = new FileIndexTuple(Integer.parseInt(aggregatee.get(0).toString()), Integer.parseInt(aggregatee.get(1).toString()));
+                    CellIndex aggregatee_index = new CellIndex(Integer.parseInt(aggregatee.get(0).toString()), Integer.parseInt(aggregatee.get(1).toString()));
                     aggregatee_indices.add(aggregatee_index);
                 }
                 double error = Double.parseDouble(jsonObj.get("error_bound").toString());
@@ -146,16 +152,16 @@ public class AnnotateAggregationCellModule extends Module {
         CsvDisplayTableModel tableModel = (CsvDisplayTableModel) pageComponents.getFileDisplayTableAggr().getModel();
         if (pageComponents.getSumRadioButton().isSelected()) {
             List<BlockIndexTuples> blocks = tableModel.getSelectedAggregatorBlocks();
-            Set<FileIndexTuple> aggregatorIndices = blocks.stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
-            Set<FileIndexTuple> aggregateeIndices = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
-            for (FileIndexTuple aggregatorIndex : aggregatorIndices) {
-                List<FileIndexTuple> aggregateesSameRow = aggregateeIndices.stream()
+            Set<CellIndex> aggregatorIndices = blocks.stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
+            Set<CellIndex> aggregateeIndices = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
+            for (CellIndex aggregatorIndex : aggregatorIndices) {
+                List<CellIndex> aggregateesSameRow = aggregateeIndices.stream()
                         .filter(tuple -> tuple.getRowIndex() == aggregatorIndex.getRowIndex()).collect(Collectors.toList());
                 if (aggregateesSameRow.size() > 0) {
                     relations.add(new AggregationRelation(aggregatorIndex, aggregateesSameRow,
                             pageComponents.getSumRadioButton().getText(), Double.parseDouble(pageComponents.getErrorTextField().getText())));
                 }
-                List<FileIndexTuple> aggregateesSameColumn = aggregateeIndices.stream()
+                List<CellIndex> aggregateesSameColumn = aggregateeIndices.stream()
                         .filter(tuple -> tuple.getColumnIndex() == aggregatorIndex.getColumnIndex()).collect(Collectors.toList());
                 if (aggregateesSameColumn.size() > 0) {
                     relations.add(new AggregationRelation(aggregatorIndex, aggregateesSameColumn,
@@ -164,16 +170,16 @@ public class AnnotateAggregationCellModule extends Module {
             }
         } else if (pageComponents.getAverageRadioButton().isSelected()) {
             List<BlockIndexTuples> blocks = tableModel.getSelectedAggregatorBlocks();
-            Set<FileIndexTuple> aggregatorIndices = blocks.stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
-            Set<FileIndexTuple> aggregateeIndices = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
-            for (FileIndexTuple aggregatorIndex : aggregatorIndices) {
-                List<FileIndexTuple> aggregateesSameRow = aggregateeIndices.stream()
+            Set<CellIndex> aggregatorIndices = blocks.stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
+            Set<CellIndex> aggregateeIndices = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
+            for (CellIndex aggregatorIndex : aggregatorIndices) {
+                List<CellIndex> aggregateesSameRow = aggregateeIndices.stream()
                         .filter(tuple -> tuple.getRowIndex() == aggregatorIndex.getRowIndex()).collect(Collectors.toList());
                 if (aggregateesSameRow.size() > 0) {
                     relations.add(new AggregationRelation(aggregatorIndex, aggregateesSameRow,
                             pageComponents.getAverageRadioButton().getText(), Double.parseDouble(pageComponents.getErrorTextField().getText())));
                 }
-                List<FileIndexTuple> aggregateesSameColumn = aggregateeIndices.stream()
+                List<CellIndex> aggregateesSameColumn = aggregateeIndices.stream()
                         .filter(tuple -> tuple.getColumnIndex() == aggregatorIndex.getColumnIndex()).collect(Collectors.toList());
                 if (aggregateesSameColumn.size() > 0) {
                     relations.add(new AggregationRelation(aggregatorIndex, aggregateesSameColumn,
@@ -181,16 +187,16 @@ public class AnnotateAggregationCellModule extends Module {
                 }
             }
         } else if (pageComponents.getSubtractRadioButton().isSelected()) {
-            Set<FileIndexTuple> aggregatorIndices = tableModel.getSelectedAggregatorBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
-            Set<FileIndexTuple> aggregateeIndices = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
-            for (FileIndexTuple aggregatorIndex : aggregatorIndices) {
-                List<FileIndexTuple> aggregateesSameRow = aggregateeIndices.stream()
+            Set<CellIndex> aggregatorIndices = tableModel.getSelectedAggregatorBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
+            Set<CellIndex> aggregateeIndices = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
+            for (CellIndex aggregatorIndex : aggregatorIndices) {
+                List<CellIndex> aggregateesSameRow = aggregateeIndices.stream()
                         .filter(tuple -> tuple.getRowIndex() == aggregatorIndex.getRowIndex()).collect(Collectors.toList());
                 if (aggregateesSameRow.size() == 2) {
                     relations.add(new AggregationRelation(aggregatorIndex, aggregateesSameRow,
                             pageComponents.getSubtractRadioButton().getText(), Double.parseDouble(pageComponents.getErrorTextField().getText())));
                 }
-                List<FileIndexTuple> aggregateesSameColumn = aggregateeIndices.stream()
+                List<CellIndex> aggregateesSameColumn = aggregateeIndices.stream()
                         .filter(tuple -> tuple.getColumnIndex() == aggregatorIndex.getColumnIndex()).collect(Collectors.toList());
                 if (aggregateesSameColumn.size() == 2) {
                     relations.add(new AggregationRelation(aggregatorIndex, aggregateesSameColumn,
@@ -198,16 +204,16 @@ public class AnnotateAggregationCellModule extends Module {
                 }
             }
         } else if (pageComponents.getPercentageRadioButton().isSelected()) {
-            Set<FileIndexTuple> aggregatorIndices = tableModel.getSelectedAggregatorBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
-            Set<FileIndexTuple> aggregateeIndices = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
-            for (FileIndexTuple aggregatorIndex : aggregatorIndices) {
-                List<FileIndexTuple> aggregateesSameRow = aggregateeIndices.stream()
+            Set<CellIndex> aggregatorIndices = tableModel.getSelectedAggregatorBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
+            Set<CellIndex> aggregateeIndices = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toSet());
+            for (CellIndex aggregatorIndex : aggregatorIndices) {
+                List<CellIndex> aggregateesSameRow = aggregateeIndices.stream()
                         .filter(tuple -> tuple.getRowIndex() == aggregatorIndex.getRowIndex()).collect(Collectors.toList());
                 if (aggregateesSameRow.size() == 2) {
                     relations.add(new AggregationRelation(aggregatorIndex, aggregateesSameRow,
                             pageComponents.getPercentageRadioButton().getText(), Double.parseDouble(pageComponents.getErrorTextField().getText())));
                 }
-                List<FileIndexTuple> aggregateesSameColumn = aggregateeIndices.stream()
+                List<CellIndex> aggregateesSameColumn = aggregateeIndices.stream()
                         .filter(tuple -> tuple.getColumnIndex() == aggregatorIndex.getColumnIndex()).collect(Collectors.toList());
                 if (aggregateesSameColumn.size() == 2) {
                     relations.add(new AggregationRelation(aggregatorIndex, aggregateesSameColumn,
@@ -218,9 +224,9 @@ public class AnnotateAggregationCellModule extends Module {
         return relations;
     }
 
-    public List<FileIndexTuple> detectPotentialAggregators() {
+    public List<CellIndex> detectPotentialAggregators() {
         // calculate the aggregation on the selected cells with the selected function.
-        List<FileIndexTuple> satisfiedIndices = new ArrayList<>();
+        List<CellIndex> satisfiedIndices = new ArrayList<>();
         if (pageComponents.getSumRadioButton().isSelected()) {
             if (this.selectedAggregateeBlocks.size() > 0) {
                 long isLeftAligned = this.selectedAggregateeBlocks.stream().map(block -> block.getTopLeftIndexTuple().getColumnIndex()).distinct().count();
@@ -352,13 +358,13 @@ public class AnnotateAggregationCellModule extends Module {
 
             CsvDisplayTableModel tableModel = (CsvDisplayTableModel) pageComponents.getFileDisplayTableAggr().getModel();
 
-            BlockIndexTuples block = new BlockIndexTuples(new FileIndexTuple(selectedRows[0], selectedColumns[0]),
-                    new FileIndexTuple(selectedRows[selectedRows.length - 1], selectedColumns[selectedColumns.length - 1]));
+            BlockIndexTuples block = new BlockIndexTuples(new CellIndex(selectedRows[0], selectedColumns[0]),
+                    new CellIndex(selectedRows[selectedRows.length - 1], selectedColumns[selectedColumns.length - 1]));
 
             if (tableModel.getTableMode() == CsvDisplayTableModel.TableMode.VIEW) {
                 // in the view mode, if the selected cells have been annotated as aggregators, highlight their respective aggregatee cells.
                 tableModel.dehighlightAnnotatedAggregateeCells();
-                for (FileIndexTuple cellIndex : block.flatten()) {
+                for (CellIndex cellIndex : block.flatten()) {
                     Optional<AggregationRelation> optRelation = tableModel.getAggregationMapping().stream()
                             .filter(relation -> relation.getAggregator().equals(cellIndex)).findFirst();
                     if (!optRelation.isPresent()) {
@@ -424,132 +430,100 @@ public class AnnotateAggregationCellModule extends Module {
         }
     }
 
-    private List<FileIndexTuple> getSumSatisfiedIndices(int[] selectedRows, int[] selectedColumns) {
+    private List<CellIndex> getSumSatisfiedIndices(int[] selectedRows, int[] selectedColumns) {
         DefaultTableModel tableModel = (DefaultTableModel) this.pageComponents.getFileDisplayTableAggr().getModel();
-        List<FileIndexTuple> satisfiedIndices = new LinkedList<>();
+        List<CellIndex> satisfiedIndices = new LinkedList<>();
 
         // slice horizontally
         int columnCount = tableModel.getColumnCount();
         for (int rowIndex : selectedRows) {
-            List<Double> numbersInSelection = new LinkedList<>();
-            Map<Integer, Double> numbersOutSelection = new HashMap<>();
+            Collection<CellIndex> selectedAggregateeCells = new ArrayList<>();
+            Collection<CellIndex> aggregatorCandidates = new ArrayList<>();
             for (int j = 0; j < columnCount; j++) {
-                String valueInRow = Objects.toString(tableModel.getValueAt(rowIndex, j), "");
-                Double normalizedNumber = NumberUtils.normalizeNumber(valueInRow);
-                if (normalizedNumber != null) {
-                    int finalJ = j;
-                    if (Arrays.stream(selectedColumns).anyMatch(value -> value == finalJ)) {
-                        numbersInSelection.add(normalizedNumber);
-                    } else {
-                        numbersOutSelection.putIfAbsent(j, normalizedNumber);
-                    }
+                int finalJ = j;
+                if (Arrays.stream(selectedColumns).anyMatch(value -> value == finalJ)) {
+                    selectedAggregateeCells.add(new CellIndex(rowIndex, finalJ));
+                } else {
+                    aggregatorCandidates.add(new CellIndex(rowIndex, finalJ));
                 }
             }
-            double expectedSum = numbersInSelection.stream().mapToDouble(Double::doubleValue).sum();
-            for (Map.Entry<Integer, Double> entry : numbersOutSelection.entrySet()) {
-                if (NumberUtils.isMinorError(expectedSum, entry.getValue(),
-                        Double.parseDouble(pageComponents.getErrorTextField().getText()), this.errorBoundMethod)) {
-                    satisfiedIndices.add(new FileIndexTuple(rowIndex, entry.getKey()));
-                }
-            }
+            AggregationDetector detector = new SumAggregationDetector(
+                    this.pageComponents.getFileDisplayTableAggr().getModel(),
+                    Double.parseDouble(pageComponents.getErrorTextField().getText()),
+                    this.errorBoundMethod);
+            satisfiedIndices.addAll(detector.getSatisfiedCellIndices(aggregatorCandidates, selectedAggregateeCells));
         }
 
         // slice vertically
         int rowCount = tableModel.getRowCount();
         for (int columnIndex : selectedColumns) {
-            List<Double> numbersInSelection = new LinkedList<>();
-            Map<Integer, Double> numbersOutSelection = new HashMap<>();
+            Collection<CellIndex> selectedAggregateeCells = new ArrayList<>();
+            Collection<CellIndex> aggregatorCandidates = new ArrayList<>();
             for (int j = 0; j < rowCount; j++) {
-                String valueInColumn = Objects.toString(tableModel.getValueAt(j, columnIndex), "");
-                Double normalizedNumber = NumberUtils.normalizeNumber(valueInColumn);
-                if (normalizedNumber != null) {
-                    int finalJ = j;
-                    if (Arrays.stream(selectedRows).anyMatch(value -> value == finalJ)) {
-                        numbersInSelection.add(normalizedNumber);
-                    } else {
-                        numbersOutSelection.putIfAbsent(j, normalizedNumber);
-                    }
+                int finalJ = j;
+                if (Arrays.stream(selectedRows).anyMatch(value -> value == finalJ)) {
+                    selectedAggregateeCells.add(new CellIndex(finalJ, columnIndex));
+                } else {
+                    aggregatorCandidates.add(new CellIndex(finalJ, columnIndex));
                 }
             }
-            double expectedSum = numbersInSelection.stream().mapToDouble(Double::doubleValue).sum();
-            for (Map.Entry<Integer, Double> entry : numbersOutSelection.entrySet()) {
-                if (NumberUtils.isMinorError(expectedSum, entry.getValue(),
-                        Double.parseDouble(pageComponents.getErrorTextField().getText()), this.errorBoundMethod)) {
-                    satisfiedIndices.add(new FileIndexTuple(entry.getKey(), columnIndex));
-                }
-            }
+            AggregationDetector detector = new SumAggregationDetector(
+                    this.pageComponents.getFileDisplayTableAggr().getModel(),
+                    Double.parseDouble(pageComponents.getErrorTextField().getText()),
+                    this.errorBoundMethod);
+            satisfiedIndices.addAll(detector.getSatisfiedCellIndices(aggregatorCandidates, selectedAggregateeCells));
         }
         return satisfiedIndices;
     }
 
-    private List<FileIndexTuple> getAverageSatisfiedIndices(int[] selectedRows, int[] selectedColumns) {
+    private List<CellIndex> getAverageSatisfiedIndices(int[] selectedRows, int[] selectedColumns) {
         DefaultTableModel tableModel = (DefaultTableModel) this.pageComponents.getFileDisplayTableAggr().getModel();
-        List<FileIndexTuple> satisfiedIndices = new LinkedList<>();
+        List<CellIndex> satisfiedIndices = new LinkedList<>();
 
         // slice horizontally
         int columnCount = tableModel.getColumnCount();
         for (int rowIndex : selectedRows) {
-            List<Double> numbersInSelection = new LinkedList<>();
-            Map<Integer, Double> numbersOutSelection = new HashMap<>();
+            Collection<CellIndex> selectedAggregateeCells = new ArrayList<>();
+            Collection<CellIndex> aggregatorCandidates = new ArrayList<>();
             for (int j = 0; j < columnCount; j++) {
-                String valueInRow = Objects.toString(tableModel.getValueAt(rowIndex, j), "");
-                Double normalizedNumber = NumberUtils.normalizeNumber(valueInRow);
-                if (normalizedNumber != null) {
-                    int finalJ = j;
-                    if (Arrays.stream(selectedColumns).anyMatch(value -> value == finalJ)) {
-                        numbersInSelection.add(normalizedNumber);
-                    } else {
-                        numbersOutSelection.putIfAbsent(j, normalizedNumber);
-                    }
+                int finalJ = j;
+                if (Arrays.stream(selectedColumns).anyMatch(value -> value == finalJ)) {
+                    selectedAggregateeCells.add(new CellIndex(rowIndex, finalJ));
+                } else {
+                    aggregatorCandidates.add(new CellIndex(rowIndex, finalJ));
                 }
             }
-            OptionalDouble optExpectedAverage = numbersInSelection.stream().mapToDouble(Double::doubleValue).average();
-            if (!optExpectedAverage.isPresent()) {
-                throw new RuntimeException("Average of the given numbers cannot be computed.");
-            }
-            double expectedAverage = optExpectedAverage.getAsDouble();
-            for (Map.Entry<Integer, Double> entry : numbersOutSelection.entrySet()) {
-                if (NumberUtils.isMinorError(expectedAverage, entry.getValue(),
-                        Double.parseDouble(pageComponents.getErrorTextField().getText()), this.errorBoundMethod)) {
-                    satisfiedIndices.add(new FileIndexTuple(rowIndex, entry.getKey()));
-                }
-            }
+            AggregationDetector detector = new AverageAggregationDetector(
+                    this.pageComponents.getFileDisplayTableAggr().getModel(),
+                    Double.parseDouble(pageComponents.getErrorTextField().getText()),
+                    this.errorBoundMethod);
+            satisfiedIndices.addAll(detector.getSatisfiedCellIndices(aggregatorCandidates, selectedAggregateeCells));
         }
 
         // slice vertically
         int rowCount = tableModel.getRowCount();
         for (int columnIndex : selectedColumns) {
-            List<Double> numbersInSelection = new LinkedList<>();
-            Map<Integer, Double> numbersOutSelection = new HashMap<>();
+            Collection<CellIndex> selectedAggregateeCells = new ArrayList<>();
+            Collection<CellIndex> aggregatorCandidates = new ArrayList<>();
             for (int j = 0; j < rowCount; j++) {
-                String valueInColumn = Objects.toString(tableModel.getValueAt(j, columnIndex), "");
-                Double normalizedNumber = NumberUtils.normalizeNumber(valueInColumn);
-                if (normalizedNumber != null) {
-                    int finalJ = j;
-                    if (Arrays.stream(selectedRows).anyMatch(value -> value == finalJ)) {
-                        numbersInSelection.add(normalizedNumber);
-                    } else {
-                        numbersOutSelection.putIfAbsent(j, normalizedNumber);
-                    }
+                int finalJ = j;
+                if (Arrays.stream(selectedRows).anyMatch(value -> value == finalJ)) {
+                    selectedAggregateeCells.add(new CellIndex(finalJ, columnIndex));
+                } else {
+                    aggregatorCandidates.add(new CellIndex(finalJ, columnIndex));
                 }
             }
-            OptionalDouble optExpectedAverage = numbersInSelection.stream().mapToDouble(Double::doubleValue).average();
-            if (!optExpectedAverage.isPresent()) {
-                throw new RuntimeException("Average of the given numbers cannot be computed.");
-            }
-            double expectedAverage = optExpectedAverage.getAsDouble();
-            for (Map.Entry<Integer, Double> entry : numbersOutSelection.entrySet()) {
-                if (NumberUtils.isMinorError(expectedAverage, entry.getValue(),
-                        Double.parseDouble(pageComponents.getErrorTextField().getText()), this.errorBoundMethod)) {
-                    satisfiedIndices.add(new FileIndexTuple(entry.getKey(), columnIndex));
-                }
-            }
+            AggregationDetector detector = new AverageAggregationDetector(
+                    this.pageComponents.getFileDisplayTableAggr().getModel(),
+                    Double.parseDouble(pageComponents.getErrorTextField().getText()),
+                    this.errorBoundMethod);
+            satisfiedIndices.addAll(detector.getSatisfiedCellIndices(aggregatorCandidates, selectedAggregateeCells));
         }
         return satisfiedIndices;
     }
 
-    private List<FileIndexTuple> getSubtractSatisfiedIndices() {
-        List<FileIndexTuple> satisfiedIndices = new LinkedList<>();
+    private List<CellIndex> getSubtractSatisfiedIndices() {
+        List<CellIndex> satisfiedIndices = new LinkedList<>();
 
         DefaultTableModel tableModel = (DefaultTableModel) this.pageComponents.getFileDisplayTableAggr().getModel();
 
@@ -600,7 +574,7 @@ public class AnnotateAggregationCellModule extends Module {
                             double expectedSubtraction = Math.abs(numberOpOne - numberOpTwo);
                             if (NumberUtils.isMinorError(expectedSubtraction, numberTarget,
                                     Double.parseDouble(pageComponents.getErrorTextField().getText()), this.errorBoundMethod)) {
-                                satisfiedIndices.add(new FileIndexTuple(i, j));
+                                satisfiedIndices.add(new CellIndex(i, j));
                             }
                         }
                     }
@@ -632,7 +606,7 @@ public class AnnotateAggregationCellModule extends Module {
                             double expectedSubtraction = Math.abs(numberOpOne - numberOpTwo);
                             if (NumberUtils.isMinorError(expectedSubtraction, numberTarget,
                                     Double.parseDouble(pageComponents.getErrorTextField().getText()), this.errorBoundMethod)) {
-                                satisfiedIndices.add(new FileIndexTuple(j, i));
+                                satisfiedIndices.add(new CellIndex(j, i));
                             }
                         }
                     }
@@ -643,8 +617,8 @@ public class AnnotateAggregationCellModule extends Module {
         return satisfiedIndices;
     }
 
-    private List<FileIndexTuple> getPercentageSatisfiedIndices() {
-        List<FileIndexTuple> satisfiedIndices = new LinkedList<>();
+    private List<CellIndex> getPercentageSatisfiedIndices() {
+        List<CellIndex> satisfiedIndices = new LinkedList<>();
 
         DefaultTableModel tableModel = (DefaultTableModel) this.pageComponents.getFileDisplayTableAggr().getModel();
 
@@ -695,13 +669,15 @@ public class AnnotateAggregationCellModule extends Module {
                             double expectedPercentage = numberOpOne / numberOpTwo;
                             double expectedChangedRatio = (numberOpTwo - numberOpOne) / numberOpOne;
                             double param = Double.parseDouble(pageComponents.getErrorTextField().getText());
-                            boolean isPercentage = NumberUtils.isMinorError(expectedPercentage, numberTarget, param, errorBoundMethod);
+                            boolean isPercentageRealNumber = NumberUtils.isMinorError(expectedPercentage, numberTarget, param, errorBoundMethod);
+                            boolean isPercentage = NumberUtils.isMinorError(expectedPercentage * 100, numberTarget, param, errorBoundMethod);
                             boolean isChangedRatio = NumberUtils.isMinorError(expectedChangedRatio, numberTarget, param, errorBoundMethod);
                             boolean isChangedPercentage = NumberUtils.isMinorError(expectedChangedRatio * 100, numberTarget, param, errorBoundMethod);
-                            if (isPercentage
+                            if (isPercentageRealNumber
+                                    || isPercentage
                                     || isChangedRatio
                                     || isChangedPercentage) {
-                                satisfiedIndices.add(new FileIndexTuple(i, j));
+                                satisfiedIndices.add(new CellIndex(i, j));
                             }
                         }
                     }
@@ -733,13 +709,15 @@ public class AnnotateAggregationCellModule extends Module {
                             double expectedPercentage = numberOpOne / numberOpTwo;
                             double expectedChangedRatio = (numberOpTwo - numberOpOne) / numberOpOne;
                             double param = Double.parseDouble(pageComponents.getErrorTextField().getText());
-                            boolean isPercentage = NumberUtils.isMinorError(expectedPercentage, numberTarget, param, errorBoundMethod);
+                            boolean isPercentageRealNumber = NumberUtils.isMinorError(expectedPercentage, numberTarget, param, errorBoundMethod);
+                            boolean isPercentage = NumberUtils.isMinorError(expectedPercentage * 100, numberTarget, param, errorBoundMethod);
                             boolean isChangedRatio = NumberUtils.isMinorError(expectedChangedRatio, numberTarget, param, errorBoundMethod);
                             boolean isChangedPercentage = NumberUtils.isMinorError(expectedChangedRatio * 100, numberTarget, param, errorBoundMethod);
-                            if (isPercentage
+                            if (isPercentageRealNumber
+                                    || isPercentage
                                     || isChangedRatio
                                     || isChangedPercentage) {
-                                satisfiedIndices.add(new FileIndexTuple(j, i));
+                                satisfiedIndices.add(new CellIndex(j, i));
                             }
                         }
                     }
@@ -822,7 +800,7 @@ public class AnnotateAggregationCellModule extends Module {
             tableModel.setLastTableMode(CsvDisplayTableModel.TableMode.SELECT_AGGREGATORS);
             pageComponents.getModeHintLabel().setText(CsvDisplayTableModel.TableMode.getModeString(tableModel.getTableMode()));
 
-            List<FileIndexTuple> satisfiedCellIndices = detectPotentialAggregators();
+            List<CellIndex> satisfiedCellIndices = detectPotentialAggregators();
             tableModel.highlightAggregatorCells(satisfiedCellIndices);
         }
     }
@@ -892,7 +870,7 @@ public class AnnotateAggregationCellModule extends Module {
                     jsonObj.put("aggregator_index", aggregator_index);
                     jsonObj.put("operator", aggregationRelation.getOperator());
                     JSONArray aggregatee_indices = new JSONArray();
-                    for (FileIndexTuple tuple : aggregationRelation.getAggregatees()) {
+                    for (CellIndex tuple : aggregationRelation.getAggregatees()) {
                         JSONArray aggregatee_index = new JSONArray();
                         aggregatee_index.add(tuple.getRowIndex());
                         aggregatee_index.add(tuple.getColumnIndex());
@@ -946,13 +924,17 @@ public class AnnotateAggregationCellModule extends Module {
         // update the error parameter value
         String errorParameterText = this.pageComponents.getErrorTextField().getText();
         if ("".equals(this.pageComponents.getErrorTextField().getText()) || !NumberUtils.isParsable(errorParameterText)) {
-            this.errorParameter = 0;
-            this.pageComponents.getErrorTextField().setText("0");
+            resetErrorParameter();
         } else {
             this.errorParameter = Double.parseDouble(this.pageComponents.getErrorTextField().getText());
         }
 
         this.mouseOperationOnFileDisplayTable(null);
+    }
+
+    private void resetErrorParameter() {
+        this.errorParameter = 0;
+        this.pageComponents.getErrorTextField().setText("0");
     }
 
     @Override

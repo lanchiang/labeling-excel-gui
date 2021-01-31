@@ -11,6 +11,5 @@ Todo-list:
 * Aggregation annotation
   * Percentage calculation function has bugs.
   * Add support for multi-aggregator view mode
-  * Reset error parameter when selecting a new file
   * Add suport for free mode annotation
-
+  

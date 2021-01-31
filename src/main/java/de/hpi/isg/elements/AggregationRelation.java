@@ -12,15 +12,15 @@ import java.util.Objects;
 @Getter
 public class AggregationRelation {
 
-    private final FileIndexTuple aggregator;
+    private final CellIndex aggregator;
 
-    private final List<FileIndexTuple> aggregatees;
+    private final List<CellIndex> aggregatees;
 
     private final String operator;
 
     private final double error;
 
-    public AggregationRelation(FileIndexTuple aggregator, List<FileIndexTuple> aggregatees, String operator, double error) {
+    public AggregationRelation(CellIndex aggregator, List<CellIndex> aggregatees, String operator, double error) {
         this.aggregator = aggregator;
         this.aggregatees = aggregatees;
         this.operator = operator;

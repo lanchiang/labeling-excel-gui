@@ -1,5 +1,6 @@
 package de.hpi.isg.modules;
 
+import de.hpi.isg.elements.Cell;
 import de.hpi.isg.json.JsonSheetEntry;
 import de.hpi.isg.elements.PageComponents;
 import de.hpi.isg.io.FileLoader;
@@ -30,6 +31,8 @@ public abstract class Module {
     protected List<JSONObject> loadedFilesAsJson;
 
     protected JsonSheetEntry selectedJsonSheetEntry;
+
+    protected Cell[][] cells;
 
     protected abstract void initializePageComponents(PageComponents pageComponents);
 

@@ -1,7 +1,5 @@
 package de.hpi.isg.swing;
 
-import de.hpi.isg.elements.BlockIndexTuples;
-import de.hpi.isg.elements.FileIndexTuple;
 import de.hpi.isg.utils.ColorSolution;
 
 import javax.swing.*;
@@ -11,7 +9,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author lan

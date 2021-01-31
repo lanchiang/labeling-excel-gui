@@ -1,6 +1,6 @@
 package de.hpi.isg.swing;
 
-import de.hpi.isg.elements.FileIndexTuple;
+import de.hpi.isg.elements.CellIndex;
 import de.hpi.isg.utils.ColorSolution;
 
 import javax.swing.*;
@@ -16,9 +16,11 @@ import java.util.stream.Collectors;
  * @author lan
  * @since 2021/1/21
  */
-public class CsvDisplayTableRender implements TableCellRenderer {
+public class CsvDisplayTableRender implements TableCellRenderer, ListCellRenderer {
 
     private static final DefaultTableCellRenderer DEFAULT_RENDERER = new DefaultTableCellRenderer();
+
+    public static final int OPACITY_PARAMETER = 16;
 
     private static int count = 0;
 
@@ -37,6 +39,7 @@ public class CsvDisplayTableRender implements TableCellRenderer {
         Component component = DEFAULT_RENDERER.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         if (isSelected) {
             component.setBackground(Color.LIGHT_GRAY);
+//            table.getTableHeader().setBackground(Color.CYAN);
             return component;
         }
 
@@ -45,24 +48,29 @@ public class CsvDisplayTableRender implements TableCellRenderer {
         component.setBackground(color);
 
         JComponent jc = (JComponent) component;
-        List<FileIndexTuple> annotatedAggregatees = tableModel.getAnnotatedAggregateesIndices();
-        if (annotatedAggregatees.contains(new FileIndexTuple(row, column))) {
+        List<CellIndex> annotatedAggregatees = tableModel.getAnnotatedAggregateesIndices();
+        if (annotatedAggregatees.contains(new CellIndex(row, column))) {
             jc.setBorder(ANNOTATED_AGGREGATOR_BORDER);
         }
-        List<FileIndexTuple> aggregatees = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toList());
-        if (aggregatees.contains(new FileIndexTuple(row, column))) {
+        List<CellIndex> aggregatees = tableModel.getSelectedAggregateeBlocks().stream().flatMap(b -> b.flatten().stream()).collect(Collectors.toList());
+        if (aggregatees.contains(new CellIndex(row, column))) {
             jc.setBorder(SELECT_AGGREGATEE_BORDER);
         }
-        List<FileIndexTuple> impliedAggregators = tableModel.getImpliedAggregatorIndices();
-        if (impliedAggregators.contains(new FileIndexTuple(row, column))) {
+        List<CellIndex> impliedAggregators = tableModel.getImpliedAggregatorIndices();
+        if (impliedAggregators.contains(new CellIndex(row, column))) {
             jc.setBorder(HIGHLIGHT_BORDER);
         }
-        List<FileIndexTuple> aggregators = tableModel.getSelectedAggregatorBlocks().stream()
+        List<CellIndex> aggregators = tableModel.getSelectedAggregatorBlocks().stream()
                 .flatMap(block -> block.flatten().stream()).collect(Collectors.toList());
-        if (aggregators.contains(new FileIndexTuple(row, column))) {
+        if (aggregators.contains(new CellIndex(row, column))) {
             jc.setBorder(SELECT_AGGREGATOR_BORDER);
         }
 
         return component;
+    }
+
+    @Override
+    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        return null;
     }
 }

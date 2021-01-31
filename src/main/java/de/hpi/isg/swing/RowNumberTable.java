@@ -1,5 +1,7 @@
 package de.hpi.isg.swing;
 
+import de.hpi.isg.utils.ColorSolution;
+
 import java.awt.*;
 import java.beans.*;
 import javax.swing.*;
@@ -141,6 +143,7 @@ public class RowNumberTable extends JTable implements ChangeListener, PropertyCh
 
             if (isSelected) {
                 setFont(getFont().deriveFont(Font.BOLD));
+                setBackground(new Color(Color.RED.getRed(), Color.RED.getGreen(), Color.RED.getBlue(), CsvDisplayTableRender.OPACITY_PARAMETER));
             }
 
             setText((value == null) ? "" : value.toString());

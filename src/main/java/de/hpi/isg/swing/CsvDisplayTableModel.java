@@ -3,7 +3,7 @@ package de.hpi.isg.swing;
 import de.hpi.isg.elements.AggregationRelation;
 import de.hpi.isg.elements.BlockIndexTuples;
 import de.hpi.isg.elements.FileBorderPainter;
-import de.hpi.isg.elements.FileIndexTuple;
+import de.hpi.isg.elements.CellIndex;
 import de.hpi.isg.utils.ColorSolution;
 import lombok.Getter;
 import lombok.Setter;
@@ -55,10 +55,10 @@ public class CsvDisplayTableModel extends DefaultTableModel {
     private FileBorderPainter cellBorderColors;
 
     @Getter
-    private final List<FileIndexTuple> impliedAggregatorIndices = new ArrayList<>();
+    private final List<CellIndex> impliedAggregatorIndices = new ArrayList<>();
 
     @Getter
-    private final List<FileIndexTuple> annotatedAggregateesIndices = new ArrayList<>();
+    private final List<CellIndex> annotatedAggregateesIndices = new ArrayList<>();
 
     @Getter
     private final List<BlockIndexTuples> selectedAggregateeBlocks = new ArrayList<>();
@@ -130,9 +130,9 @@ public class CsvDisplayTableModel extends DefaultTableModel {
      * Highlight the cells that aggregate the selected aggregatees with red cell border.
      * @param satisfiedIndexTuples
      */
-    public void highlightAggregatorCells(List<FileIndexTuple> satisfiedIndexTuples) {
+    public void highlightAggregatorCells(List<CellIndex> satisfiedIndexTuples) {
         lastCellBackgroundColors = new ArrayList<>(cellBackgroundColors);
-        for (FileIndexTuple indexTuple: satisfiedIndexTuples) {
+        for (CellIndex indexTuple: satisfiedIndexTuples) {
             this.impliedAggregatorIndices.add(indexTuple);
             fireTableCellUpdated(indexTuple.getRowIndex(), indexTuple.getColumnIndex());
         }
@@ -142,7 +142,7 @@ public class CsvDisplayTableModel extends DefaultTableModel {
      * Remove the highlighted aggregation cells
      */
     public void dehighlightAggregatorCells() {
-        for (FileIndexTuple indexTuple : this.impliedAggregatorIndices) {
+        for (CellIndex indexTuple : this.impliedAggregatorIndices) {
             fireTableCellUpdated(indexTuple.getRowIndex(), indexTuple.getColumnIndex());
         }
         this.impliedAggregatorIndices.clear();
@@ -153,9 +153,9 @@ public class CsvDisplayTableModel extends DefaultTableModel {
      * Highlight the cells that aggregate the selected aggregatees with red cell border.
      * @param aggregatees
      */
-    public void highlightAnnotatedAggregateeCells(List<FileIndexTuple> aggregatees) {
+    public void highlightAnnotatedAggregateeCells(List<CellIndex> aggregatees) {
         lastCellBackgroundColors = new ArrayList<>(cellBackgroundColors);
-        for (FileIndexTuple indexTuple: aggregatees) {
+        for (CellIndex indexTuple: aggregatees) {
             this.annotatedAggregateesIndices.add(indexTuple);
             fireTableCellUpdated(indexTuple.getRowIndex(), indexTuple.getColumnIndex());
         }
@@ -165,7 +165,7 @@ public class CsvDisplayTableModel extends DefaultTableModel {
      * Remove the highlighted aggregation cells
      */
     public void dehighlightAnnotatedAggregateeCells() {
-        for (FileIndexTuple indexTuple : this.annotatedAggregateesIndices) {
+        for (CellIndex indexTuple : this.annotatedAggregateesIndices) {
             fireTableCellUpdated(indexTuple.getRowIndex(), indexTuple.getColumnIndex());
         }
         this.annotatedAggregateesIndices.clear();
@@ -177,8 +177,8 @@ public class CsvDisplayTableModel extends DefaultTableModel {
      */
     public void removeAggregateeSelection() {
         for (BlockIndexTuples blockIndexTuples : this.selectedAggregateeBlocks) {
-            for (FileIndexTuple fileIndexTuple : blockIndexTuples.flatten()) {
-                fireTableCellUpdated(fileIndexTuple.getRowIndex(), fileIndexTuple.getColumnIndex());
+            for (CellIndex cellIndex : blockIndexTuples.flatten()) {
+                fireTableCellUpdated(cellIndex.getRowIndex(), cellIndex.getColumnIndex());
             }
         }
         this.selectedAggregateeBlocks.clear();
@@ -189,8 +189,8 @@ public class CsvDisplayTableModel extends DefaultTableModel {
      */
     public void removeAggregatorSelection() {
         for (BlockIndexTuples blockIndexTuples : this.selectedAggregatorBlocks) {
-            for (FileIndexTuple fileIndexTuple : blockIndexTuples.flatten()) {
-                fireTableCellUpdated(fileIndexTuple.getRowIndex(), fileIndexTuple.getColumnIndex());
+            for (CellIndex cellIndex : blockIndexTuples.flatten()) {
+                fireTableCellUpdated(cellIndex.getRowIndex(), cellIndex.getColumnIndex());
             }
         }
         this.selectedAggregatorBlocks.clear();
@@ -203,7 +203,7 @@ public class CsvDisplayTableModel extends DefaultTableModel {
      */
     public void selectAggregateeBlock(BlockIndexTuples block) {
         this.selectedAggregateeBlocks.add(block);
-        for (FileIndexTuple tuple : block.flatten()) {
+        for (CellIndex tuple : block.flatten()) {
             fireTableCellUpdated(tuple.getRowIndex(), tuple.getColumnIndex());
         }
     }
@@ -214,7 +214,7 @@ public class CsvDisplayTableModel extends DefaultTableModel {
      * @param block
      */
     public void selectAggregatorBlock(BlockIndexTuples block) {
-        for (FileIndexTuple tuple : block.flatten()) {
+        for (CellIndex tuple : block.flatten()) {
             fireTableCellUpdated(tuple.getRowIndex(), tuple.getColumnIndex());
         }
         this.selectedAggregatorBlocks.add(block);

@@ -5,10 +5,12 @@ import lombok.Getter;
 import java.util.Objects;
 
 /**
+ * This class represents the (row, column) index of a tabular structure.
+ *
  * @author lan
  * @since 2021/1/18
  */
-public class FileIndexTuple {
+public class CellIndex {
 
     @Getter
     private final int rowIndex;
@@ -16,7 +18,7 @@ public class FileIndexTuple {
     @Getter
     private final int columnIndex;
 
-    public FileIndexTuple(int rowIndex, int columnIndex) {
+    public CellIndex(int rowIndex, int columnIndex) {
         this.rowIndex = rowIndex;
         this.columnIndex = columnIndex;
     }
@@ -25,7 +27,7 @@ public class FileIndexTuple {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        FileIndexTuple that = (FileIndexTuple) o;
+        CellIndex that = (CellIndex) o;
         return Objects.equals(rowIndex, that.rowIndex) && Objects.equals(columnIndex, that.columnIndex);
     }
 

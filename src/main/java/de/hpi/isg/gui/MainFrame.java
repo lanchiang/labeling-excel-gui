@@ -411,13 +411,6 @@ public class MainFrame {
             }
         });
 
-//        mainPagePanel.addKeyListener(new KeyAdapter() {
-//            @Override
-//            public void keyReleased(KeyEvent e) {
-//                annotateAggregationCellModule.keyOperationOnFileDisplayTable(e);
-//            }
-//        });
-
         ActionListener aggrFuncRadioGroupListener = e -> {
             this.annotateAggregationCellModule.prepareAggregationFunctionSetting(e.getActionCommand());
         };

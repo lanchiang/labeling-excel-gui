@@ -1,7 +1,7 @@
 package de.hpi.isg.swing;
 
 import de.hpi.isg.elements.BlockIndexTuples;
-import de.hpi.isg.elements.FileIndexTuple;
+import de.hpi.isg.elements.CellIndex;
 import de.hpi.isg.utils.ColorSolution;
 import lombok.Getter;
 import org.json.simple.JSONArray;
@@ -34,19 +34,19 @@ public class SheetDisplayCellTableModel extends DefaultTableModel {
      * Indices of cells that can be computed as aggregators with the selected data.
      */
     @Getter
-    private final List<FileIndexTuple> previewAggregatorIndices = new ArrayList<>();
+    private final List<CellIndex> previewAggregatorIndices = new ArrayList<>();
 
     /**
      * Store the aggregators marked by the users in GUI. Key is an aggregator index, value is the aggregatees of this aggregator.
      */
     @Getter
-    private final Map<FileIndexTuple, List<List<FileIndexTuple>>> aggregators = new HashMap<>();
+    private final Map<CellIndex, List<List<CellIndex>>> aggregators = new HashMap<>();
 
     @Getter
-    private final List<FileIndexTuple> accumulativeSelectedCellIndices = new ArrayList<>();
+    private final List<CellIndex> accumulativeSelectedCellIndices = new ArrayList<>();
 
     @Getter
-    private final List<FileIndexTuple> selectedAggregators = new ArrayList<>();
+    private final List<CellIndex> selectedAggregators = new ArrayList<>();
 
     @Getter
     private final List<BlockIndexTuples> selectedAggregatees = new ArrayList<>();
@@ -93,22 +93,22 @@ public class SheetDisplayCellTableModel extends DefaultTableModel {
         fireTableDataChanged();
     }
 
-    public void highlightAggregatorCells(List<FileIndexTuple> satisfiedIndexTuples) {
-        for (FileIndexTuple indexTuple: satisfiedIndexTuples) {
+    public void highlightAggregatorCells(List<CellIndex> satisfiedIndexTuples) {
+        for (CellIndex indexTuple: satisfiedIndexTuples) {
             this.previewAggregatorIndices.add(indexTuple);
             fireTableCellUpdated(indexTuple.getRowIndex(), indexTuple.getColumnIndex());
         }
     }
 
     public void removeAggregatorEmphasis() {
-        for (FileIndexTuple indexTuple : this.previewAggregatorIndices) {
+        for (CellIndex indexTuple : this.previewAggregatorIndices) {
             fireTableCellUpdated(indexTuple.getRowIndex(), indexTuple.getColumnIndex());
         }
         this.previewAggregatorIndices.clear();
     }
 
     public void clearAllSelection() {
-        for (FileIndexTuple tuple : this.accumulativeSelectedCellIndices) {
+        for (CellIndex tuple : this.accumulativeSelectedCellIndices) {
             fireTableCellUpdated(tuple.getRowIndex(), tuple.getColumnIndex());
         }
         this.accumulativeSelectedCellIndices.clear();
@@ -117,7 +117,7 @@ public class SheetDisplayCellTableModel extends DefaultTableModel {
     public void updateAccSelectedCells(BlockIndexTuples blockIndex) {
         for (int i = blockIndex.getTopLeftIndexTuple().getRowIndex(); i <= blockIndex.getBottomRightIndexTuple().getRowIndex(); i++) {
             for (int j = blockIndex.getTopLeftIndexTuple().getColumnIndex(); j <= blockIndex.getBottomRightIndexTuple().getColumnIndex(); j++) {
-                this.accumulativeSelectedCellIndices.add(new FileIndexTuple(i, j));
+                this.accumulativeSelectedCellIndices.add(new CellIndex(i, j));
                 fireTableCellUpdated(i, j);
             }
         }
@@ -178,14 +178,14 @@ public class SheetDisplayCellTableModel extends DefaultTableModel {
         return false;
     }
 
-    public void addToAnnotations(List<FileIndexTuple> aggregators, List<BlockIndexTuples> aggregatees) {
+    public void addToAnnotations(List<CellIndex> aggregators, List<BlockIndexTuples> aggregatees) {
 
-        long numLeftIndices = aggregatees.stream().map(BlockIndexTuples::getTopLeftIndexTuple).map(FileIndexTuple::getColumnIndex).distinct().count();
-        long numRightIndices = aggregatees.stream().map(BlockIndexTuples::getBottomRightIndexTuple).map(FileIndexTuple::getColumnIndex).distinct().count();
+        long numLeftIndices = aggregatees.stream().map(BlockIndexTuples::getTopLeftIndexTuple).map(CellIndex::getColumnIndex).distinct().count();
+        long numRightIndices = aggregatees.stream().map(BlockIndexTuples::getBottomRightIndexTuple).map(CellIndex::getColumnIndex).distinct().count();
         long aggregateeSliceLength = aggregatees.stream()
                 .map(bit -> bit.getBottomRightIndexTuple().getColumnIndex() - bit.getTopLeftIndexTuple().getColumnIndex())
                 .distinct().count();
-        long aggregatorRowSpan = aggregators.stream().map(FileIndexTuple::getRowIndex).distinct().count();
+        long aggregatorRowSpan = aggregators.stream().map(CellIndex::getRowIndex).distinct().count();
 
         if (numLeftIndices == 1 && numRightIndices == 1 && aggregatorRowSpan == 1) {
             // blocks are vertically aligned.
@@ -196,17 +196,17 @@ public class SheetDisplayCellTableModel extends DefaultTableModel {
                 }
             }
 
-            for (FileIndexTuple aggregator : aggregators) {
-                List<FileIndexTuple> aggregateeIndices = selectedRowsList.stream()
-                        .map(rowIndex -> new FileIndexTuple(rowIndex, aggregator.getColumnIndex())).collect(Collectors.toList());
+            for (CellIndex aggregator : aggregators) {
+                List<CellIndex> aggregateeIndices = selectedRowsList.stream()
+                        .map(rowIndex -> new CellIndex(rowIndex, aggregator.getColumnIndex())).collect(Collectors.toList());
                 this.aggregators.putIfAbsent(aggregator, new ArrayList<>());
                 this.aggregators.get(aggregator).add(aggregateeIndices);
             }
         }
 
-        long numTopIndices = aggregatees.stream().map(BlockIndexTuples::getTopLeftIndexTuple).map(FileIndexTuple::getRowIndex).distinct().count();
-        long numBottomIndices = aggregatees.stream().map(BlockIndexTuples::getBottomRightIndexTuple).map(FileIndexTuple::getRowIndex).distinct().count();
-        long aggregatorColumnSpan = aggregators.stream().map(FileIndexTuple::getColumnIndex).distinct().count();
+        long numTopIndices = aggregatees.stream().map(BlockIndexTuples::getTopLeftIndexTuple).map(CellIndex::getRowIndex).distinct().count();
+        long numBottomIndices = aggregatees.stream().map(BlockIndexTuples::getBottomRightIndexTuple).map(CellIndex::getRowIndex).distinct().count();
+        long aggregatorColumnSpan = aggregators.stream().map(CellIndex::getColumnIndex).distinct().count();
 
         if (numTopIndices == 1 && numBottomIndices == 1 && aggregatorColumnSpan == 1) {
             // blocks are horizontally aligned.
@@ -217,9 +217,9 @@ public class SheetDisplayCellTableModel extends DefaultTableModel {
                 }
             }
 
-            for (FileIndexTuple aggregator : aggregators) {
-                List<FileIndexTuple> aggregateeIndices = selectedColumnsList.stream()
-                        .map(columnIndex -> new FileIndexTuple(aggregator.getRowIndex(), columnIndex)).collect(Collectors.toList());
+            for (CellIndex aggregator : aggregators) {
+                List<CellIndex> aggregateeIndices = selectedColumnsList.stream()
+                        .map(columnIndex -> new CellIndex(aggregator.getRowIndex(), columnIndex)).collect(Collectors.toList());
                 this.aggregators.putIfAbsent(aggregator, new ArrayList<>());
                 this.aggregators.get(aggregator).add(aggregateeIndices);
             }

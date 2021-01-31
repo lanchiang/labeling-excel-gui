@@ -43,14 +43,14 @@ public class FileBorderPainter {
         this.removeColorAtIndices(block.flatten(), color);
     }
 
-    public void addColorAtIndices(Collection<FileIndexTuple> indices, Color color) {
-        for (FileIndexTuple index : indices) {
+    public void addColorAtIndices(Collection<CellIndex> indices, Color color) {
+        for (CellIndex index : indices) {
             this.borderColors.get(index.getRowIndex()).get(index.getColumnIndex()).push(color);
         }
     }
 
-    public void removeColorAtIndices(Collection<FileIndexTuple> indices, Color color) {
-        for (FileIndexTuple tuple : indices) {
+    public void removeColorAtIndices(Collection<CellIndex> indices, Color color) {
+        for (CellIndex tuple : indices) {
             Stack<Color> colorStack = this.borderColors.get(tuple.getRowIndex()).get(tuple.getColumnIndex());
             if (!colorStack.peek().equals(ColorSolution.DEFAULT_BACKGROUND_COLOR)) {
                 colorStack.pop();
